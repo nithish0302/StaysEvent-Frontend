@@ -5,7 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import HomePage from "@/pages/customer/HomePage";
-import HotelPage from "@/pages/customer/HotelPage";
+import HotelListingPage from "@/pages/customer/HotelListingPage";
 import HotelDetailPage from "@/pages/customer/HotelDetailPage";
 import EventsPage from "@/pages/customer/EventsPage";
 import EventsDetailPage from "@/pages/customer/EventsDetailPage";
@@ -30,7 +30,7 @@ const AppRouter = () => {
         <Route path="/auth/callback" element={<GoogleCallbackPage />} />
         <Route path="/auth/role-selection" element={<RoleSelectionPage />} />
         <Route path={routes.customer.home} element={<HomePage />} />
-        <Route path={routes.customer.hotel} element={<HotelPage />} />
+        <Route path={routes.customer.hotel} element={<HotelListingPage />} />
         <Route
           path={routes.customer.hotelDetail}
           element={<HotelDetailPage />}

@@ -22,11 +22,11 @@ const Navbar = () => {
     }
   };
   return (
-    <nav className="bg-green-900 sticky z-50 shadow-md">
+    <nav className="bg-green-900 sticky z-50 shadow-md ">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16">
         <div
           onClick={() => navigate(routes.customer.home)}
-          className="font-display text-gray-50 font-bold text-2xl cursor-pointer"
+          className="font-display text-gray-50 font-bold text-3xl cursor-pointer mt-1"
         >
           Stays <span className="text-yellow-500">Event</span>{" "}
         </div>
