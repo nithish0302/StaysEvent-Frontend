@@ -5,6 +5,8 @@ import RegisterPage from "../auth/RegisterPage";
 import Navbar from "@/components/common/Navbar";
 import VendorDetailsPage from "../vendor/VendorDetailsPage";
 import VendorPendingPage from "../vendor/VendorPendingPage";
+import HotelListingPage from "./HotelListingPage";
+import HotelCard from "@/components/hotel/HotelCard";
 
 const HomePage = () => {
   return (
@@ -59,7 +61,7 @@ const HomePage = () => {
     //     </div>
     //   </div>
     // </div>
-    <VendorPendingPage />
+    <HotelListingPage />
   );
 };
 
