@@ -25,6 +25,7 @@ export default {
         display: ["Playfair Display", "serif"],
         sans: ["DM Sans", "sans-serif"],
         label: ["Josefin Sans", "sans-serif"],
+        manrope: ["Manrope", "sans-serif"],
       },
       boxShadow: {
         sm: "0 2px 8px rgba(26,60,52,0.06)",
