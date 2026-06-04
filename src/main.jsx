@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import useAuthStore from "./store/authStore";
 import api from "./api/axios";
+import "leaflet/dist/leaflet.css";
 
 useAuthStore.getState().initialize();
 

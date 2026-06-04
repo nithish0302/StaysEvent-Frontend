@@ -3,13 +3,20 @@ import React, { useEffect, useState } from "react";
 import { getAllHotels } from "@/api/hotel";
 
 import {
-  Search,
-  Star,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
-  X,
+  Star,
+  ArrowLeft,
+  Wifi,
+  Car,
+  Dumbbell,
+  Waves,
+  UtensilsCrossed,
+  AirVent,
+  Sparkles,
+  Wine,
+  Users,
+  BedDouble,
+  IndianRupee,
 } from "lucide-react";
 
 import HotelCard from "@/components/hotel/HotelCard";
@@ -72,7 +79,7 @@ const HotelListingPage = () => {
 
       setTotalHotels(data.totalHotels);
 
-      setTotalPages(data.totalPages);
+      setTotalPages(data.totalPage);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {

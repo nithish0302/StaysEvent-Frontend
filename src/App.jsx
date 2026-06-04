@@ -3,6 +3,7 @@ import AppRouter from "./router/AppRouter";
 import Navbar from "./components/common/Navbar";
 import { useLocation } from "react-router-dom";
 
+
 const App = () => {
   const location = useLocation();
   const hideNavBar = [
