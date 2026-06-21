@@ -21,6 +21,7 @@ const routes = {
     pendingApproval: "/vendor/pending-approval",
     dashboard: "/vendor",
     listing: "/vendor/listing",
+    addHotel: "/vendor/add-hotel",
   },
 
   admin: {

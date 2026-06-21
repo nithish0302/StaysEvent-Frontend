@@ -8,10 +8,12 @@ import VendorPendingPage from "../vendor/VendorPendingPage";
 import HotelListingPage from "./HotelListingPage";
 import HotelCard from "@/components/hotel/HotelCard";
 import HotelDetailPage from "./HotelDetailPage";
+import EventListingPage from "./EventListingPage";
+import EventDetailsSkeleton from "@/components/event/EventDetailSkeleton";
+import EventsDetailPage from "./EventsDetailPage";
 
 const HomePage = () => {
-  return <HotelDetailPage />;
+  return <EventListingPage />;
 };
 
 export default HomePage;
-

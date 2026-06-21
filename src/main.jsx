@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import useAuthStore from "./store/authStore";
 import api from "./api/axios";
 import "leaflet/dist/leaflet.css";
+import ScrollToTop from "./components/common/ScrollToTop";
 
 useAuthStore.getState().initialize();
 
@@ -31,6 +32,7 @@ if (user && !token) {
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <App />
     </BrowserRouter>
   </StrictMode>,
