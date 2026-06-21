@@ -2,14 +2,20 @@ import api from "@/api/axios";
 
 export const getAllEvents = async (filter) => {
   try {
-    const response = await api.get("/events", { params: filter });
+    const response = await api.get("/events", {
+      params: {
+        ...filter,
+        status: filter.status?.join(","),
+        amenities: filter.amenities?.join(","),
+      },
+    });
+
     return response.data;
   } catch (err) {
     console.log(`Error occured ${err.message}`);
     throw err;
   }
 };
-
 export const getEventById = async (id) => {
   try {
     const response = await api.get(`/events/${id}`);

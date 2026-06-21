@@ -2,7 +2,12 @@ import api from "@/api/axios";
 
 export const getAllHotels = async (filter) => {
   try {
-    const response = await api.get("/hotels", { params: filter });
+    const response = await api.get("/hotels", {
+      params: {
+        ...filter,
+        amenities: filter.amenities?.join(","),
+      },
+    });
     return response.data;
   } catch (err) {
     console.log(`Error occured ${err.message}`);

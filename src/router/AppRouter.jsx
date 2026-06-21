@@ -7,7 +7,7 @@ import RegisterPage from "@/pages/auth/RegisterPage";
 import HomePage from "@/pages/customer/HomePage";
 import HotelListingPage from "@/pages/customer/HotelListingPage";
 import HotelDetailPage from "@/pages/customer/HotelDetailPage";
-import EventsPage from "@/pages/customer/EventsPage";
+import EventsPage from "@/pages/customer/EventListingPage";
 import EventsDetailPage from "@/pages/customer/EventsDetailPage";
 import ProtectedRoutes from "@/components/common/ProtectedRoutes";
 import WishlistPage from "@/pages/customer/WishlistPage";
@@ -19,6 +19,7 @@ import GoogleCallbackPage from "@/pages/auth/GoogleCallbackPage";
 import RoleSelectionPage from "@/pages/auth/RoleSelectionPage";
 import VendorDetailsPage from "@/pages/vendor/VendorDetailsPage";
 import VendorPendingPage from "@/pages/vendor/VendorPendingPage";
+import AddHotelPage from "@/pages/vendor/AddHotelPage";
 
 const AppRouter = () => {
   const location = useLocation();
@@ -86,6 +87,15 @@ const AppRouter = () => {
           element={
             <ProtectedRoutes allowedRoles={["vendor"]}>
               <VendorPendingPage />
+            </ProtectedRoutes>
+          }
+        />
+
+        <Route
+          path={routes.vendor.addHotel}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <AddHotelPage />
             </ProtectedRoutes>
           }
         />

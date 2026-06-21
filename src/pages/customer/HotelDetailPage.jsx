@@ -3,79 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getHotelById } from "@/api/hotel";
 import HotelDetailsSkeleton from "@/components/hotel/HotelDetailSkeleton";
 import {
-  Star,
-  MapPin,
-  IndianRupee,
-  TriangleAlert,
   ArrowLeft,
-  Sparkles,
+  MapPin,
   Dot,
-  Wifi,
-  Dumbbell,
-  Car,
-  Utensils,
-  Snowflake,
-  Wine,
-  Waves,
-  Coffee,
-  Tv,
-  Shield,
-  Bath,
-  Refrigerator,
-  WashingMachine,
-  Users,
-  Baby,
-  PawPrint,
-  Briefcase,
-  HeartPulse,
-  ConciergeBell,
-  ParkingCircle,
-  CigaretteOff,
-  Accessibility,
-  Bike,
-  Bus,
-  TreePalm,
-  Gamepad2,
-  Music,
-  Camera,
-  ShieldCheck,
-  CircleHelp,
+  Star,
+  IndianRupee,
   BedDouble,
+  Sparkles,
+  TriangleAlert,
   Lock,
 } from "lucide-react";
-
-const amenityIcons = {
-  WiFi: Wifi,
-  Pool: Waves,
-  Gym: Dumbbell,
-  Parking: Car,
-  Restaurant: Utensils,
-  AC: Snowflake,
-  Spa: Sparkles,
-  Bar: Wine,
-  "Coffee Shop": Coffee,
-  TV: Tv,
-  Security: Shield,
-  Bathtub: Bath,
-  Refrigerator: Refrigerator,
-  Laundry: WashingMachine,
-  "Family Rooms": Users,
-  "Kids Play Area": Baby,
-  "Pet Friendly": PawPrint,
-  "Business Center": Briefcase,
-  "Medical Assistance": HeartPulse,
-  RoomService: ConciergeBell,
-  "Free Parking": ParkingCircle,
-  "Non Smoking": CigaretteOff,
-  Accessible: Accessibility,
-  Bicycle: Bike,
-  Shuttle: Bus,
-  Garden: TreePalm,
-  Gaming: Gamepad2,
-  Entertainment: Music,
-  CCTV: Camera,
-  "24x7 Security": ShieldCheck,
-};
+import { amenityIcons, DefaultAmenityIcon } from "@/constants/amenityIcons";
 
 const HotelDetailPage = () => {
   const [hotel, setHotel] = useState(null);
@@ -102,7 +40,6 @@ const HotelDetailPage = () => {
     };
     fetchHotel();
   }, [id]);
-
 
   if (isLoading) return <HotelDetailsSkeleton />;
 
@@ -249,9 +186,10 @@ const HotelDetailPage = () => {
               <h2 className="font-display text-xl font-semibold text-green-900 mb-4">
                 Amenities
               </h2>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {hotel.amenities.map((amenity) => {
-                  const Icon = amenityIcons[amenity] || CircleHelp;
+                  const Icon = amenityIcons[amenity] || DefaultAmenityIcon;
                   return (
                     <div
                       key={amenity}
