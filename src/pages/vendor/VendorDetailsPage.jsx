@@ -17,6 +17,7 @@ const VendorDetailsPage = () => {
     city: "",
   });
   const [error, setError] = useState({});
+
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,

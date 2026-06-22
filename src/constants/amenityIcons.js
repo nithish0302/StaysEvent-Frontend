@@ -30,8 +30,6 @@ import {
   Camera,
   ShieldCheck,
   CircleHelp,
- 
-
 } from "lucide-react";
 
 export const amenityIcons = {

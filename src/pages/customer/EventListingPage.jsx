@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import {
   MapPin,
@@ -48,11 +46,8 @@ const EventListingPage = () => {
     "Other",
   ];
 
-  // FIX 1: was ["Hotel", "Ticket", "both"] — inconsistent casing
-  // must match backend enum exactly: hall / ticket / both
-  const bookingTypes = ["hall", "ticket",];
+  const bookingTypes = ["hall", "ticket"];
 
-  // FIX 2: was hotel amenities — these are EVENT amenities from Event model
   const amenitiesList = [
     "Parking",
     "Catering",
@@ -90,7 +85,6 @@ const EventListingPage = () => {
   const handleSearch = async () => {
     setIsLoading(true);
     setError("");
-    // FIX 3: removed console.log("Filter:", filter)
     try {
       const data = await getAllEvents({
         ...filter,
@@ -98,10 +92,8 @@ const EventListingPage = () => {
       });
       setEvents(data.events);
       setTotalEvents(data.totalEvents);
-      // FIX 4: was data.totalPages — API returns totalPage (singular)
       setTotalPages(data.totalPage);
     } catch (err) {
-      // FIX 5: was setError(err) — sets Error object not string
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setIsLoading(false);

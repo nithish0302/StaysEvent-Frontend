@@ -22,6 +22,7 @@ const routes = {
     dashboard: "/vendor",
     listing: "/vendor/listing",
     addHotel: "/vendor/add-hotel",
+    myHotel: "/vendor/my-hotel",
   },
 
   admin: {
