@@ -17,6 +17,8 @@ import {
   Trash2,
   X,
   TriangleAlert,
+  Locate,
+  Loader2,
 } from "lucide-react";
 import { TbCalendarPlus } from "react-icons/tb";
 import routes from "@/config/routes";
@@ -32,7 +34,13 @@ const AddEventPage = () => {
     bookingType: "hall",
     hallDetails: { pricePerDay: 0, totalHalls: 0 },
     ticketDetails: { price: 0, totalSeats: 0 },
-    location: { city: "", state: "", address: "", pinCode: "" },
+    location: {
+      city: "",
+      state: "",
+      address: "",
+      pinCode: "",
+      coordinates: { longitude: "", latitude: "" },
+    },
     startDate: "",
     endDate: "",
     startTime: "",
@@ -51,6 +59,7 @@ const AddEventPage = () => {
   const [photoToDelete, setPhotoToDelete] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   const categories = [
     "Wedding",
@@ -133,11 +142,51 @@ const AddEventPage = () => {
 
   const handleLocationChange = (e) => {
     const { name, value } = e.target;
-    setEventData((prev) => ({
-      ...prev,
-      location: { ...prev.location, [name]: value },
-    }));
+
+    if (name === "longitude" || name === "latitude") {
+      setEventData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: { ...prev.location.coordinates, [name]: value },
+        },
+      }));
+    } else {
+      setEventData((prev) => ({
+        ...prev,
+        location: { ...prev.location, [name]: value },
+      }));
+    }
     clearFieldError(name);
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setEventData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: {
+              latitude: position.coords.latitude.toFixed(6),
+              longitude: position.coords.longitude.toFixed(6),
+            },
+          },
+        }));
+        clearFieldError("latitude");
+        clearFieldError("longitude");
+        setIsLocating(false);
+      },
+      () => {
+        setError("Unable to retrieve your location");
+        setIsLocating(false);
+      },
+    );
   };
 
   const togglePublic = (value) => {
@@ -212,6 +261,20 @@ const AddEventPage = () => {
       errors.pinCode = "Pin code is required";
     } else if (!/^\d{6}$/.test(eventData.location.pinCode)) {
       errors.pinCode = "Pin code must be 6 digits";
+    }
+
+    const { latitude, longitude } = eventData.location.coordinates;
+    if (
+      latitude !== "" &&
+      (isNaN(latitude) || latitude < -90 || latitude > 90)
+    ) {
+      errors.latitude = "Latitude must be between -90 and 90";
+    }
+    if (
+      longitude !== "" &&
+      (isNaN(longitude) || longitude < -180 || longitude > 180)
+    ) {
+      errors.longitude = "Longitude must be between -180 and 180";
     }
 
     if (!eventData.startDate) errors.startDate = "Start date is required";
@@ -321,7 +384,6 @@ const AddEventPage = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* SECTION 1 — Basic Information */}
           <div className="bg-white border border-green-100 rounded-2xl mb-6 p-4">
             <div className="flex gap-2 items-center mb-1">
               <PartyPopper
@@ -401,7 +463,6 @@ const AddEventPage = () => {
             </div>
           </div>
 
-          {/* SECTION 2 — Booking Type */}
           <div className="bg-white border border-green-100 rounded-2xl mb-6 p-4">
             <div className="flex gap-2 items-center mb-4">
               <Building2
@@ -564,6 +625,55 @@ const AddEventPage = () => {
                     onChange={handleLocationChange}
                   />
                   <FieldError name="pinCode" />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+                  <p className="text-green-800 font-medium">
+                    Coordinates{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    disabled={isLocating}
+                    className="flex items-center gap-1.5 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+                  >
+                    {isLocating ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Locate size={14} />
+                    )}
+                    Use My Location
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      name="latitude"
+                      placeholder="eg: 12.9981"
+                      className={inputClass("latitude")}
+                      value={eventData.location.coordinates.latitude}
+                      onChange={handleLocationChange}
+                    />
+                    <FieldError name="latitude" />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      name="longitude"
+                      placeholder="eg: 77.5920"
+                      className={inputClass("longitude")}
+                      value={eventData.location.coordinates.longitude}
+                      onChange={handleLocationChange}
+                    />
+                    <FieldError name="longitude" />
+                  </div>
                 </div>
               </div>
             </div>

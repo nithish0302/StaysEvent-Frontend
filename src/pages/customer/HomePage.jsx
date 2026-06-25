@@ -16,7 +16,7 @@ import AddEventPage from "../vendor/AddEventPage";
 import MyHotelsPage from "../vendor/MyHotelsPage";
 
 const HomePage = () => {
-  return <MyHotelsPage />;
+  return <AddEventPage />;
 };
 
 export default HomePage;
