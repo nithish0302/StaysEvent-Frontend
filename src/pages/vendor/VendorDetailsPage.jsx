@@ -61,7 +61,6 @@ const VendorDetailsPage = () => {
       }
     });
 
-    // GST Validation
     const gstRegex =
       /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
@@ -69,7 +68,6 @@ const VendorDetailsPage = () => {
       error.gstNumber = "Invalid GST Number";
     }
 
-    // PAN Validation
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
     if (formData.panNumber && !panRegex.test(formData.panNumber)) {
@@ -95,7 +93,7 @@ const VendorDetailsPage = () => {
       useAuthStore.getState().setUser(data.user);
       navigate(routes.vendor.pendingApproval);
     } catch (err) {
-      console.log("Error Occurred");
+      console.log("Error Occurred", err);
     } finally {
       setIsLoading(false);
     }
