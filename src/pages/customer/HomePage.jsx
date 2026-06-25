@@ -11,9 +11,12 @@ import HotelDetailPage from "./HotelDetailPage";
 import EventListingPage from "./EventListingPage";
 import EventDetailsSkeleton from "@/components/event/EventDetailSkeleton";
 import EventsDetailPage from "./EventsDetailPage";
+import AddHotelPage from "../vendor/AddHotelPage";
+import AddEventPage from "../vendor/AddEventPage";
+import MyHotelsPage from "../vendor/MyHotelsPage";
 
 const HomePage = () => {
-  return <EventListingPage />;
+  return <MyHotelsPage />;
 };
 
 export default HomePage;

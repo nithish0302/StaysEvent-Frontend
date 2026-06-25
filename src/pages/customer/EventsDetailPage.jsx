@@ -71,13 +71,11 @@ const EventsDetailPage = () => {
       </div>
     );
 
-  // FIX 2: guard against event being null on first render before fetch resolves
   if (!event) return null;
 
   const vendor = event.vendorId;
   const isHall = event.bookingType === "hall";
 
-  // FIX 3: category icon + hall purpose helpers (the feature you asked for)
   const CategoryIcon = categoryIcons[event.category] || DefaultCategoryIcon;
 
   const hallPurposeLabel =
@@ -88,7 +86,6 @@ const EventsDetailPage = () => {
   const isGeneralPurpose =
     event.category === "Other" && !event.otherCategoryName;
 
-  // FIX 4: date formatting helper — was missing entirely, left side was empty
   const formatDate = (date) =>
     new Date(date).toLocaleDateString("en-IN", {
       month: "short",
