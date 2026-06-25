@@ -13,6 +13,8 @@ import {
   Trash2,
   X,
   TriangleAlert,
+  Locate,
+  Loader2,
 } from "lucide-react";
 import { TbBuildingPlus } from "react-icons/tb";
 import routes from "@/config/routes";
@@ -48,6 +50,7 @@ const AddHotelPage = () => {
   const [customAmenity, setCustomAmenity] = useState("");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const starOption = [3, 4, 5];
   const [amenitiesOptions, setAmenitiesOptions] = useState([
     "WiFi",
@@ -76,6 +79,13 @@ const AddHotelPage = () => {
     };
   }, [previewImage, photoToDelete]);
 
+  const clearFieldError = (name) => {
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      return { ...prev, [name]: undefined };
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setHotelData((prev) => ({
@@ -85,9 +95,7 @@ const AddHotelPage = () => {
           ? Number(value)
           : value,
     }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
+    clearFieldError(name);
   };
 
   const handlePhotosChange = (e) => {
@@ -97,9 +105,7 @@ const AddHotelPage = () => {
       ...prev,
       photos: [...prev.photos, ...files],
     }));
-    if (fieldErrors.photos) {
-      setFieldErrors((prev) => ({ ...prev, photos: undefined }));
-    }
+    clearFieldError("photos");
   };
 
   const removePhoto = () => {
@@ -115,16 +121,51 @@ const AddHotelPage = () => {
 
   const handleLocationChange = (e) => {
     const { name, value } = e.target;
-    setHotelData((prev) => ({
-      ...prev,
-      location: {
-        ...prev.location,
-        [name]: value,
-      },
-    }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+
+    if (name === "longitude" || name === "latitude") {
+      setHotelData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: { ...prev.location.coordinates, [name]: value },
+        },
+      }));
+    } else {
+      setHotelData((prev) => ({
+        ...prev,
+        location: { ...prev.location, [name]: value },
+      }));
     }
+    clearFieldError(name);
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setHotelData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: {
+              latitude: position.coords.latitude.toFixed(6),
+              longitude: position.coords.longitude.toFixed(6),
+            },
+          },
+        }));
+        clearFieldError("latitude");
+        clearFieldError("longitude");
+        setIsLocating(false);
+      },
+      () => {
+        setError("Unable to retrieve your location");
+        setIsLocating(false);
+      },
+    );
   };
 
   const toggleAmenity = (amenityName) => {
@@ -134,9 +175,7 @@ const AddHotelPage = () => {
         ? prev.amenities.filter((item) => item !== amenityName)
         : [...prev.amenities, amenityName],
     }));
-    if (fieldErrors.amenities) {
-      setFieldErrors((prev) => ({ ...prev, amenities: undefined }));
-    }
+    clearFieldError("amenities");
   };
 
   const addCustomAmenity = () => {
@@ -189,6 +228,20 @@ const AddHotelPage = () => {
       errors.pinCode = "Pin code is required";
     } else if (!/^\d{6}$/.test(hotelData.location.pinCode)) {
       errors.pinCode = "Pin code must be 6 digits";
+    }
+
+    const { latitude, longitude } = hotelData.location.coordinates;
+    if (
+      latitude !== "" &&
+      (isNaN(latitude) || latitude < -90 || latitude > 90)
+    ) {
+      errors.latitude = "Latitude must be between -90 and 90";
+    }
+    if (
+      longitude !== "" &&
+      (isNaN(longitude) || longitude < -180 || longitude > 180)
+    ) {
+      errors.longitude = "Longitude must be between -180 and 180";
     }
 
     if (!hotelData.amenities || hotelData.amenities.length === 0) {
@@ -278,7 +331,6 @@ const AddHotelPage = () => {
           </p>
         </div>
 
-        {/* FIX 10: general error banner — was completely missing in the UI */}
         {error && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 px-5 py-3 rounded-xl mb-6">
             <TriangleAlert size={18} />
@@ -394,6 +446,57 @@ const AddHotelPage = () => {
                       ${fieldErrors.pinCode ? "border-red-400" : "border-green-100"}`}
                   />
                   <FieldError name="pinCode" />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+                  <p className="text-green-800 font-medium">
+                    Coordinates{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    disabled={isLocating}
+                    className="flex items-center gap-1.5 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+                  >
+                    {isLocating ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Locate size={14} />
+                    )}
+                    Use My Location
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      name="latitude"
+                      value={hotelData.location.coordinates.latitude}
+                      onChange={handleLocationChange}
+                      placeholder="eg: 13.0827"
+                      className={`w-full border p-2 rounded-md placeholder:text-green-800/50
+                        ${fieldErrors.latitude ? "border-red-400" : "border-green-100"}`}
+                    />
+                    <FieldError name="latitude" />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      name="longitude"
+                      value={hotelData.location.coordinates.longitude}
+                      onChange={handleLocationChange}
+                      placeholder="eg: 80.2707"
+                      className={`w-full border p-2 rounded-md placeholder:text-green-800/50
+                        ${fieldErrors.longitude ? "border-red-400" : "border-green-100"}`}
+                    />
+                    <FieldError name="longitude" />
+                  </div>
                 </div>
               </div>
             </div>

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import HotelCardSkeleton from "@/components/hotel/HotelCardSkeleton";
 
-import VendorHotelCard from "@/components/hotel/VendorHotelCard";
+import VendorHotelCard from "@/components/vendor/VendorHotelCard";
 
 const MyHotelsPage = () => {
   const navigate = useNavigate();
@@ -120,7 +120,6 @@ const MyHotelsPage = () => {
           </div>
         )}
 
- 
         {!isLoading && hotels.length === 0 && (
           <div className="mt-10 flex flex-col items-center text-center px-4">
             <Building size={40} className="text-green-300 mb-3" />
