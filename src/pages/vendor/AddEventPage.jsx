@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createEvent } from "@/api/event";
 import { amenityIcons, DefaultAmenityIcon } from "@/constants/amenityIcons";
 import { categoryIcons, DefaultCategoryIcon } from "@/constants/categoryIcons";
+import PhotoUploadSection from "@/components/common/PhotoUploadSection";
 import {
   PartyPopper,
   MapPin,
@@ -12,10 +13,6 @@ import {
   Building2,
   Ticket,
   Gem,
-  ImagePlus,
-  CloudUpload,
-  Trash2,
-  X,
   TriangleAlert,
   Locate,
   Loader2,
@@ -48,18 +45,17 @@ const AddEventPage = () => {
     registrationDeadline: "",
     isPublic: true,
     amenities: [],
-    photos: [],
   };
 
   const [eventData, setEventData] = useState(initialEventData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [previewImage, setPreviewImage] = useState(null);
-  const [photoToDelete, setPhotoToDelete] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState([]);
+  const [isPhotosUploading, setIsPhotosUploading] = useState(false);
 
   const categories = [
     "Wedding",
@@ -83,14 +79,6 @@ const AddEventPage = () => {
 
   const isHall = eventData.bookingType === "hall";
   const isOtherCategory = eventData.category === "Other";
-
-  useEffect(() => {
-    document.body.style.overflow =
-      previewImage || photoToDelete !== null ? "hidden" : "auto";
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [previewImage, photoToDelete]);
 
   const clearFieldError = (name) => {
     if (fieldErrors[name]) {
@@ -203,21 +191,6 @@ const AddEventPage = () => {
     clearFieldError("amenities");
   };
 
-  const handlePhotosChange = (e) => {
-    const files = Array.from(e.target.files);
-    setEventData((prev) => ({ ...prev, photos: [...prev.photos, ...files] }));
-    clearFieldError("photos");
-  };
-
-  const removePhoto = () => {
-    if (photoToDelete === null) return;
-    setEventData((prev) => ({
-      ...prev,
-      photos: prev.photos.filter((_, index) => index !== photoToDelete),
-    }));
-    setPhotoToDelete(null);
-  };
-
   const validation = () => {
     const errors = {};
 
@@ -302,7 +275,7 @@ const AddEventPage = () => {
       errors.amenities = "Select at least one amenity";
     }
 
-    if (!eventData.photos || eventData.photos.length === 0) {
+    if (photoUrls.length === 0) {
       errors.photos = "At least one photo is required";
     }
 
@@ -313,8 +286,7 @@ const AddEventPage = () => {
     setEventData(initialEventData);
     setError("");
     setFieldErrors({});
-    setPreviewImage(null);
-    setPhotoToDelete(null);
+    setPhotoUrls([]);
   };
 
   const handleCancel = () => {
@@ -325,7 +297,10 @@ const AddEventPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+    if (isPhotosUploading) {
+      setError("Please wait for photos to finish uploading");
+      return;
+    }
     const { isValid, errors } = validation();
 
     if (!isValid) {
@@ -342,6 +317,7 @@ const AddEventPage = () => {
         ...eventData,
         hallDetails: isHall ? eventData.hallDetails : null,
         ticketDetails: isHall ? null : eventData.ticketDetails,
+        photos: photoUrls,
       };
       await createEvent(payload);
       resetForm();
@@ -841,119 +817,12 @@ const AddEventPage = () => {
           </div>
 
           {/* SECTION 7 — Photos */}
-          <div className="bg-white border border-green-100 rounded-2xl mb-6 p-4">
-            <div className="flex gap-2 items-center mb-4">
-              <ImagePlus
-                className="text-orange-600 border border-orange-50 py-2 px-1 bg-orange-100 rounded-sm shrink-0"
-                size={32}
-              />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl text-green-800 font-semibold">
-                Photos
-              </h1>
-            </div>
-
-            <label
-              htmlFor="photos"
-              className={`flex flex-col items-center justify-center h-44 sm:h-52 px-4 text-center border-2 border-dashed rounded-2xl cursor-pointer hover:bg-green-50/30 transition-all duration-200
-                ${fieldErrors.photos ? "border-red-300" : "border-green-200"}`}
-            >
-              <CloudUpload size={36} className="text-green-700 mb-3" />
-              <p className="text-base sm:text-xl font-medium text-green-900">
-                Drag photos here or click to upload
-              </p>
-              <p className="text-sm text-gray-400 mt-2">Max 10 photos</p>
-              <input
-                id="photos"
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotosChange}
-              />
-            </label>
-            <FieldError name="photos" />
-
-            {eventData.photos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                {eventData.photos.map((file, index) => (
-                  <div
-                    key={index}
-                    className="relative h-32 rounded-xl border border-green-200 overflow-hidden bg-white shadow-sm"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setPhotoToDelete(index)}
-                      className="absolute top-2 right-2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white hover:bg-red-600"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                    <div className="absolute top-2 left-2 z-10 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      {index + 1}
-                    </div>
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`Preview ${index + 1}`}
-                      onClick={() => setPreviewImage(URL.createObjectURL(file))}
-                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-all duration-200"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {previewImage && (
-            <div
-              className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
-              onClick={() => setPreviewImage(null)}
-            >
-              <button
-                type="button"
-                onClick={() => setPreviewImage(null)}
-                className="absolute top-6 right-6 text-white"
-              >
-                <X size={32} />
-              </button>
-              <img
-                src={previewImage}
-                alt="Preview"
-                onClick={(e) => e.stopPropagation()}
-                className="max-w-[90vw] max-h-[90vh] object-contain"
-              />
-            </div>
-          )}
-
-          {photoToDelete !== null && (
-            <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center px-4">
-              <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <TriangleAlert size={28} className="text-red-500" />
-                  <h2 className="text-xl font-semibold text-green-900">
-                    Delete Photo?
-                  </h2>
-                </div>
-                <p className="text-gray-500 mb-6">
-                  Are you sure you want to delete this photo?
-                </p>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPhotoToDelete(null)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={removePhoto}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <PhotoUploadSection
+            preset={import.meta.env.VITE_CLOUDINARY_HOTEL_PRESET}
+            onUrlsChange={setPhotoUrls}
+            onUploadingChange={setIsPhotosUploading}
+            error={fieldErrors.photos}
+          />
 
           {/* ACTION BUTTONS */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
@@ -967,7 +836,7 @@ const AddEventPage = () => {
 
             <button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isPhotosUploading}
               onClick={() => setShowPublishConfirm(true)}
               className="w-full sm:w-80 flex items-center justify-center gap-2 bg-green-900 py-3 rounded-xl text-gold-500 text-lg font-medium disabled:opacity-70 order-1 sm:order-2"
             >
@@ -1028,6 +897,14 @@ const AddEventPage = () => {
                   Your event listing will be submitted and become available to
                   customers.
                 </p>
+
+                {isPhotosUploading && (
+                  <p className="text-amber-600 text-sm mb-4 flex items-center gap-1.5">
+                    <Loader2 size={14} className="animate-spin" />
+                    Photos are still uploading — please wait a moment
+                  </p>
+                )}
+
                 <div className="flex justify-end gap-3">
                   <button
                     type="button"
@@ -1038,11 +915,13 @@ const AddEventPage = () => {
                   </button>
                   <button
                     type="button"
+                    // NEW — disabled while uploading or already submitting
+                    disabled={isPhotosUploading || isSubmitting}
                     onClick={(e) => {
                       setShowPublishConfirm(false);
                       handleSubmit(e);
                     }}
-                    className="px-4 py-2 bg-green-900 text-gold-500 rounded-lg"
+                    className="px-4 py-2 bg-green-900 text-gold-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Publish
                   </button>
