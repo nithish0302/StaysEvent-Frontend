@@ -4,7 +4,7 @@ import EventDetailsSkeleton from "@/components/event/EventDetailSkeleton";
 import ReviewSection from "@/components/common/ReviewSection";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import useAuthStore from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
 import routes from "@/config/routes";
 import {
   TriangleAlert,
@@ -616,12 +616,9 @@ const EventsDetailPage = () => {
               </div>
 
               <button
-                onClick={() =>
-                  isCustomer
-                    ? navigate(
-                        `${routes.customer.booking.replace(":id", event._id)}?type=event`,
-                      )
-                    : navigate(routes.auth.login)
+                onClick={() => isCustomer
+                  ? navigate(`${routes.customer.booking.replace(":id", event._id)}?type=event`)
+                  : navigate(routes.auth.login)
                 }
                 className="w-full bg-green-900 text-gold-500 py-4 rounded-xl font-semibold text-base hover:bg-green-800 transition-all duration-200 mb-3"
               >
@@ -633,25 +630,15 @@ const EventsDetailPage = () => {
                     if (!event) return;
                     setWishlistLoading(true);
                     try {
-                      if (wishlisted) {
-                        await removeFromWishlist(event._id, "EVENT");
-                        setWishlisted(false);
-                      } else {
-                        await addToWishlist(event._id, "EVENT");
-                        setWishlisted(true);
-                      }
-                    } catch (_) {
-                    } finally {
-                      setWishlistLoading(false);
-                    }
+                      if (wishlisted) { await removeFromWishlist(event._id, "EVENT"); setWishlisted(false); }
+                      else { await addToWishlist(event._id, "EVENT"); setWishlisted(true); }
+                    } catch (_) {}
+                    finally { setWishlistLoading(false); }
                   }}
                   disabled={wishlistLoading}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm transition-all ${wishlisted ? "bg-red-50 border-red-200 text-red-500" : "border-green-200 text-green-800 hover:bg-green-50"}`}
                 >
-                  <Heart
-                    size={15}
-                    className={wishlisted ? "fill-red-400 text-red-400" : ""}
-                  />
+                  <Heart size={15} className={wishlisted ? "fill-red-400 text-red-400" : ""} />
                   {wishlisted ? "Saved to Wishlist" : "Save to Wishlist"}
                 </button>
               )}

@@ -12,8 +12,8 @@ const routes = {
     events: "/events",
     eventDetails: "/event/:id",
     wishlist: "/wishlist",
-    mybooking: "/my-booking",
-    booking: "booking/:id",
+    mybooking: "/my-bookings",
+    booking: "/booking/:id",
   },
 
   vendor: {
@@ -23,6 +23,11 @@ const routes = {
     listing: "/vendor/listing",
     addHotel: "/vendor/add-hotel",
     myHotel: "/vendor/my-hotel",
+    addEvent: "/vendor/add-event",
+    myEvents: "/vendor/my-events",
+    editHotel: "/vendor/edit-hotel/:id",
+    editEvent: "/vendor/edit-event/:id",
+    bookings: "/vendor/bookings",
   },
 
   admin: {

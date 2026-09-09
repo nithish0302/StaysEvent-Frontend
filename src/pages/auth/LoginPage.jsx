@@ -52,7 +52,10 @@ const LoginPage = () => {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
       >
-        <div className="hidden lg:block absolute top-8 left-8 cursor-pointer bg-green-900 text-gold-500 p-[0.6rem] rounded-md">
+        <div
+          onClick={() => navigate(routes.customer.home)}
+          className="hidden lg:block absolute top-8 left-8 cursor-pointer bg-green-900 text-gold-500 p-[0.6rem] rounded-md"
+        >
           Back to home →
         </div>
         <div className="section-eyebrow">WELCOME BACK</div>

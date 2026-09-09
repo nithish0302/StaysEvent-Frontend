@@ -4,7 +4,7 @@ import { getHotelById } from "@/api/hotel";
 import { addToWishlist, removeFromWishlist } from "@/api/wishlist";
 import HotelDetailsSkeleton from "@/components/hotel/HotelDetailSkeleton";
 import ReviewSection from "@/components/common/ReviewSection";
-import useAuthStore from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
 import routes from "@/config/routes";
 import {
   ArrowLeft,
