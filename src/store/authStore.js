@@ -21,10 +21,15 @@ const useAuthStore = create((set) => ({
   },
 
   initialize: () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (user) {
-      set({ user, isLoggedIn: true });
+    try {
+      const raw = localStorage.getItem("user");
+      const user = raw ? JSON.parse(raw) : null;
+      if (user) {
+        set({ user, isLoggedIn: true });
+      }
+    } catch {
+      // Corrupted value in localStorage — clear it and start fresh
+      localStorage.removeItem("user");
     }
   },
 }));

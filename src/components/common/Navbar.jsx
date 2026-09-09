@@ -1,7 +1,7 @@
 import useAuthStore from "@/store/authStore";
 import React, { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { logout } from "@/api/auth";
 import routes from "@/config/routes";
 const Navbar = () => {
@@ -21,14 +21,24 @@ const Navbar = () => {
       alert("Error Occurred during the logout");
     }
   };
+
+  // Logo click only goes to the public landing page for customers / logged-out
+  // visitors. Vendors and admins land back on their own dashboard instead.
+  const handleLogoClick = () => {
+    const role = user?.role?.toLowerCase();
+    if (role === "vendor") navigate(routes.vendor.dashboard);
+    else if (role === "admin") navigate(routes.admin.dashboard);
+    else navigate(routes.customer.home);
+  };
+
   return (
     <nav className="bg-green-900 sticky top-0 z-50 shadow-md ">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16">
         <div
-          onClick={() => navigate(routes.customer.home)}
+          onClick={handleLogoClick}
           className="font-display text-gray-50 font-bold text-3xl cursor-pointer mt-1"
         >
-          Stays <span className="text-yellow-500">Event</span>{" "}
+          Stay<span className="text-yellow-500">Event</span>
         </div>
 
         <div className="hidden lg:flex items-center gap-8">
@@ -99,16 +109,48 @@ const Navbar = () => {
             </>
           )}
           {user?.role.toLowerCase() === "vendor" && (
-            <Link
-              to="/dashboard"
-              className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
-                isActive(routes.vendor.dashboard)
-                  ? "text-yellow-500 border-b-2 border-yellow-500"
-                  : "text-white"
-              }`}
-            >
-              Dashboard
-            </Link>
+            <>
+              <Link
+                to={routes.vendor.dashboard}
+                className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
+                  isActive(routes.vendor.dashboard)
+                    ? "text-yellow-500 border-b-2 border-yellow-500"
+                    : "text-white"
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to={routes.vendor.myHotel}
+                className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
+                  isActive(routes.vendor.myHotel)
+                    ? "text-yellow-500 border-b-2 border-yellow-500"
+                    : "text-white"
+                }`}
+              >
+                My Hotels
+              </Link>
+              <Link
+                to={routes.vendor.myEvents}
+                className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
+                  isActive(routes.vendor.myEvents)
+                    ? "text-yellow-500 border-b-2 border-yellow-500"
+                    : "text-white"
+                }`}
+              >
+                My Events
+              </Link>
+              <Link
+                to={routes.vendor.bookings}
+                className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
+                  isActive(routes.vendor.bookings)
+                    ? "text-yellow-500 border-b-2 border-yellow-500"
+                    : "text-white"
+                }`}
+              >
+                Bookings
+              </Link>
+            </>
           )}
           {user?.role.toLowerCase() === "admin" && (
             <Link
@@ -268,17 +310,52 @@ const Navbar = () => {
             )}
 
             {user?.role?.toLowerCase() === "vendor" && (
-              <Link
-                to={routes.vendor.dashboard}
-                onClick={() => setMenuOpen(false)}
-                className={`font-sans text-sm font-medium ${
-                  isActive(routes.vendor.dashboard)
-                    ? "text-yellow-500"
-                    : "text-white"
-                }`}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  to={routes.vendor.dashboard}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.vendor.dashboard)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to={routes.vendor.myHotel}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.vendor.myHotel)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  My Hotels
+                </Link>
+                <Link
+                  to={routes.vendor.myEvents}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.vendor.myEvents)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  My Events
+                </Link>
+                <Link
+                  to={routes.vendor.bookings}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.vendor.bookings)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  Bookings
+                </Link>
+              </>
             )}
 
             {user?.role?.toLowerCase() === "admin" && (

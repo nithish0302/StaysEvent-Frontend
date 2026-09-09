@@ -20,6 +20,12 @@ import RoleSelectionPage from "@/pages/auth/RoleSelectionPage";
 import VendorDetailsPage from "@/pages/vendor/VendorDetailsPage";
 import VendorPendingPage from "@/pages/vendor/VendorPendingPage";
 import AddHotelPage from "@/pages/vendor/AddHotelPage";
+import AddEventPage from "@/pages/vendor/AddEventPage";
+import MyHotelsPage from "@/pages/vendor/MyHotelsPage";
+import MyEventsPage from "@/pages/vendor/MyEventsPage";
+import EditHotelPage from "@/pages/vendor/EditHotelPage";
+import EditEventPage from "@/pages/vendor/EditEventPage";
+import VendorBookingsPage from "@/pages/vendor/VendorBookingsPage";
 
 const AppRouter = () => {
   const location = useLocation();
@@ -96,6 +102,54 @@ const AppRouter = () => {
           element={
             <ProtectedRoutes allowedRoles={["vendor"]}>
               <AddHotelPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.myHotel}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <MyHotelsPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.addEvent}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <AddEventPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.myEvents}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <MyEventsPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.editHotel}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <EditHotelPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.editEvent}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <EditEventPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.vendor.bookings}
+          element={
+            <ProtectedRoutes allowedRoles={["vendor"]}>
+              <VendorBookingsPage />
             </ProtectedRoutes>
           }
         />

@@ -7,6 +7,15 @@ const api = axios.create({
 });
 
 let isRefreshing = false;
+let pendingQueue = []; // queue of { resolve, reject } for requests waiting on token refresh
+
+const processQueue = (error, token = null) => {
+  pendingQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  pendingQueue = [];
+};
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
@@ -23,9 +32,15 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        useAuthStore.getState().logout();
-        window.location.href = "/login";
-        return Promise.reject(error);
+        // Another refresh is already in progress — queue this request
+        return new Promise((resolve, reject) => {
+          pendingQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
@@ -36,9 +51,11 @@ api.interceptors.response.use(
         const newToken = res.data.accessToken;
         useAuthStore.getState().login(useAuthStore.getState().user, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        processQueue(null, newToken);
         isRefreshing = false;
         return api(originalRequest);
       } catch (refreshError) {
+        processQueue(refreshError, null);
         isRefreshing = false;
         useAuthStore.getState().logout();
         window.location.href = "/login";
