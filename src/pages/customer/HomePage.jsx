@@ -35,15 +35,15 @@ const HotelCard = ({ hotel, onClick }) => (
         <p className="font-semibold text-green-900 line-clamp-1 flex-1">{hotel.name}</p>
         <StarRow n={hotel.starRating || 0} />
       </div>
-      <p className="text-xs text-gray-400 flex items-center gap-1 mb-3">
+      <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
         <MapPin size={11} />{hotel.location?.city}, {hotel.location?.state}
       </p>
       <div className="flex items-center justify-between">
         <p className="text-green-800 font-bold text-sm flex items-center gap-0.5">
           <IndianRupee size={13} />{hotel.pricePerNight?.toLocaleString("en-IN")}
-          <span className="text-gray-400 font-normal text-xs ml-1">/ night</span>
+          <span className="text-gray-500 font-normal text-xs ml-1">/ night</span>
         </p>
-        <span className="text-xs text-gray-400">{hotel.availableRooms} rooms left</span>
+        <span className="text-xs text-gray-500">{hotel.availableRooms} rooms left</span>
       </div>
     </div>
   </div>
@@ -66,16 +66,16 @@ const EventCard = ({ event, onClick }) => {
       </div>
       <div className="p-4">
         <p className="font-semibold text-green-900 line-clamp-1 mb-1">{event.name}</p>
-        <p className="text-xs text-gray-400 flex items-center gap-1 mb-3">
+        <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
           <MapPin size={11} />{event.location?.city}, {event.location?.state}
         </p>
         <div className="flex items-center justify-between">
           <p className="text-green-800 font-bold text-sm flex items-center gap-0.5">
             <IndianRupee size={13} />{price?.toLocaleString("en-IN")}
-            <span className="text-gray-400 font-normal text-xs ml-1">{isHall ? "/ day" : "/ ticket"}</span>
+            <span className="text-gray-500 font-normal text-xs ml-1">{isHall ? "/ day" : "/ ticket"}</span>
           </p>
           {event.startDate && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500">
               {new Date(event.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
             </span>
           )}
@@ -92,7 +92,7 @@ const Section = ({ title, subtitle, viewAllTo, children, loading }) => {
       <div className="flex items-end justify-between mb-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-green-900">{title}</h2>
-          {subtitle && <p className="text-gray-400 text-sm mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-gray-500 text-sm mt-0.5">{subtitle}</p>}
         </div>
         <button onClick={() => navigate(viewAllTo)} className="flex items-center gap-1 text-sm text-green-700 hover:text-green-900 font-medium">
           View all <ArrowRight size={14} />
@@ -124,7 +124,7 @@ const Hero = ({ onSearch }) => {
           <Search size={18} className="ml-4 text-gray-400 shrink-0" />
           <input type="text" placeholder="Search by city..." value={query} onChange={(e) => setQuery(e.target.value)}
             className="flex-1 px-3 py-3.5 text-sm outline-none text-gray-700" />
-          <button type="submit" className="px-5 py-3.5 text-sm font-semibold text-white shrink-0" style={{ background: "#1A3C34" }}>Search</button>
+          <button type="submit" className="px-5 py-3.5 text-sm font-semibold shrink-0" style={{ background: "#1A3C34", color: "#ffffff" }}>Search</button>
         </form>
       </div>
     </div>
@@ -155,22 +155,30 @@ const HomePage = () => {
         {[{ value: "500+", label: "Hotels Listed" }, { value: "1,200+", label: "Events Hosted" }, { value: "10K+", label: "Happy Guests" }].map(({ value, label }) => (
           <div key={label} className="bg-white border border-green-100 rounded-2xl p-5">
             <p className="text-2xl font-bold text-green-900">{value}</p>
-            <p className="text-gray-400 text-xs mt-0.5">{label}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
-      <Section title="Featured Hotels" subtitle="Hand-picked properties for your next stay" viewAllTo={routes.customer.hotel} loading={hotelsLoading}>
-        {hotels.slice(0, 6).map((h) => (
-          <HotelCard key={h._id} hotel={h} onClick={() => navigate(routes.customer.hotelDetail.replace(":id", h._id))} />
-        ))}
-      </Section>
+      {/* data-testid hooks: the e2e visual-regression suite masks these two
+          sections out of its screenshot diff, since their content is live
+          data (grows/changes as tests and real usage create hotels/events)
+          and isn't something a pixel-diff baseline can stay in sync with. */}
+      <div data-testid="home-hotels-section">
+        <Section title="Featured Hotels" subtitle="Hand-picked properties for your next stay" viewAllTo={routes.customer.hotel} loading={hotelsLoading}>
+          {hotels.slice(0, 6).map((h) => (
+            <HotelCard key={h._id} hotel={h} onClick={() => navigate(routes.customer.hotelDetail.replace(":id", h._id))} />
+          ))}
+        </Section>
+      </div>
 
-      <Section title="Upcoming Events" subtitle="Halls, shows, and experiences near you" viewAllTo={routes.customer.events} loading={eventsLoading}>
-        {events.slice(0, 6).map((e) => (
-          <EventCard key={e._id} event={e} onClick={() => navigate(routes.customer.eventDetails.replace(":id", e._id))} />
-        ))}
-      </Section>
+      <div data-testid="home-events-section">
+        <Section title="Upcoming Events" subtitle="Halls, shows, and experiences near you" viewAllTo={routes.customer.events} loading={eventsLoading}>
+          {events.slice(0, 6).map((e) => (
+            <EventCard key={e._id} event={e} onClick={() => navigate(routes.customer.eventDetails.replace(":id", e._id))} />
+          ))}
+        </Section>
+      </div>
 
       <div className="rounded-3xl text-center py-12 px-6" style={{ background: "linear-gradient(135deg, #1A3C34, #2d6a5f)" }}>
         <h2 className="text-2xl font-bold text-white mb-2">List your property with us</h2>

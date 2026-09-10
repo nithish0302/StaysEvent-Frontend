@@ -63,3 +63,23 @@ export const updateVendorDetails = async (data) => {
     throw err;
   }
 };
+
+export const updateProfile = async (data) => {
+  try {
+    const response = await api.put("/auth/profile", data);
+    return response.data;
+  } catch (err) {
+    console.log(`Error Occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const changePassword = async (data) => {
+  try {
+    const response = await api.put("/auth/change-password", data);
+    return response.data;
+  } catch (err) {
+    console.log(`Error Occurred ${err.message}`);
+    throw err;
+  }
+};

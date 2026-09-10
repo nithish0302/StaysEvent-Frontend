@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyBookings, cancelBooking } from "@/api/booking";
+import {
+  getMyBookings,
+  cancelBooking,
+  getPendingReviewBookings,
+  dismissReviewPrompt,
+} from "@/api/booking";
+import routes from "@/config/routes";
+import { payForBooking } from "@/api/payment";
 import {
   Hotel,
   CalendarDays,
@@ -15,7 +22,74 @@ import {
   Loader2,
   TriangleAlert,
   Search,
+  Sparkles,
+  Star,
+  X,
+  CreditCard,
 } from "lucide-react";
+
+const ReviewPromptCard = ({ booking, onDismiss }) => {
+  const navigate = useNavigate();
+  const isHotel = booking.bookingCategory === "hotel";
+  const listing = isHotel ? booking.hotelId : booking.eventId;
+  const [dismissing, setDismissing] = useState(false);
+
+  const goToReview = () => {
+    if (!listing?._id) return;
+    const path = isHotel
+      ? routes.customer.hotelDetail.replace(":id", listing._id)
+      : routes.customer.eventDetails.replace(":id", listing._id);
+    navigate(path);
+  };
+
+  const handleDismiss = async (e) => {
+    e.stopPropagation();
+    setDismissing(true);
+    try {
+      await dismissReviewPrompt(booking._id);
+    } finally {
+      onDismiss(booking._id);
+    }
+  };
+
+  return (
+    <div
+      onClick={goToReview}
+      className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-yellow-100/70 transition-colors"
+    >
+      <div className="w-11 h-11 rounded-full bg-yellow-500 flex items-center justify-center shrink-0">
+        <Sparkles size={20} className="text-green-950" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-green-900">
+          {isHotel ? "Your stay at" : "Your event at"}{" "}
+          <span className="text-green-800">{listing?.name || "this listing"}</span>{" "}
+          is complete
+        </p>
+        <p className="text-xs text-green-700/80 mt-0.5">
+          {isHotel
+            ? "The hotel has been vacated. Tell others how it went."
+            : "Hope you had a great time. Tell others how it went."}
+        </p>
+      </div>
+      <button
+        onClick={goToReview}
+        className="shrink-0 flex items-center gap-1.5 text-xs font-semibold bg-green-900 text-white px-3.5 py-2 rounded-xl hover:bg-green-800"
+      >
+        <Star size={13} />
+        Write a Review
+      </button>
+      <button
+        onClick={handleDismiss}
+        disabled={dismissing}
+        className="shrink-0 text-yellow-700/60 hover:text-yellow-800 p-1"
+        aria-label="Dismiss"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
 
 const STATUS_STYLES = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
@@ -31,12 +105,14 @@ const STATUS_ICONS = {
   cancelled: XCircle,
 };
 
-const BookingCard = ({ booking, onCancel }) => {
+const BookingCard = ({ booking, onCancel, onPaid }) => {
   const isHotel = booking.bookingCategory === "hotel";
   const listing = isHotel ? booking.hotelId : booking.eventId;
   const StatusIcon = STATUS_ICONS[booking.status] || Clock;
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -45,6 +121,23 @@ const BookingCard = ({ booking, onCancel }) => {
     } finally {
       setCancelling(false);
       setShowConfirm(false);
+    }
+  };
+
+  const needsPayment =
+    booking.paymentStatus === "pending" &&
+    ["pending", "confirmed"].includes(booking.status);
+
+  const handlePayNow = async () => {
+    setPaying(true);
+    setPayError("");
+    try {
+      await payForBooking({ bookingId: booking._id });
+      onPaid(booking._id);
+    } catch (err) {
+      setPayError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -75,10 +168,17 @@ const BookingCard = ({ booking, onCancel }) => {
               <MapPin size={11} />{listing?.location?.city || "—"}
             </p>
           </div>
-          <span className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[booking.status]}`}>
-            <StatusIcon size={12} />
-            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[booking.status]}`}>
+              <StatusIcon size={12} />
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </span>
+            {needsPayment && (
+              <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                Payment Pending
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Booking details */}
@@ -108,15 +208,30 @@ const BookingCard = ({ booking, onCancel }) => {
             Booked {new Date(booking.createdAt).toLocaleDateString("en-IN")}
           </p>
 
-          {["pending", "confirmed"].includes(booking.status) && (
-            <button
-              onClick={() => setShowConfirm(true)}
-              className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50"
-            >
-              Cancel Booking
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {needsPayment && (
+              <button
+                onClick={handlePayNow}
+                disabled={paying}
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-900 px-3 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-60"
+              >
+                {paying ? <Loader2 size={13} className="animate-spin" /> : <CreditCard size={13} />}
+                {paying ? "Opening..." : "Pay Now"}
+              </button>
+            )}
+            {["pending", "confirmed"].includes(booking.status) && (
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50"
+              >
+                Cancel Booking
+              </button>
+            )}
+          </div>
         </div>
+        {payError && (
+          <p className="text-xs text-red-600 -mt-1">{payError}</p>
+        )}
       </div>
 
       {/* Cancel confirm modal */}
@@ -153,6 +268,25 @@ const MyBookingPage = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [reviewPrompts, setReviewPrompts] = useState([]);
+
+  useEffect(() => {
+    const fetchPrompts = () => {
+      getPendingReviewBookings()
+        .then((data) => setReviewPrompts(data.bookings || []))
+        .catch(() => {});
+    };
+    fetchPrompts();
+    // Poll in case a booking gets marked completed while this page is
+    // already open (a vendor could complete it seconds after the customer
+    // loaded this page).
+    const interval = setInterval(fetchPrompts, 45000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const dismissPrompt = (bookingId) => {
+    setReviewPrompts((prev) => prev.filter((b) => b._id !== bookingId));
+  };
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -186,6 +320,15 @@ const MyBookingPage = () => {
     <div className="page-wrapper py-10 px-4 sm:px-8 lg:px-16">
       <h1 className="text-2xl font-bold text-green-900 mb-1">My Bookings</h1>
       <p className="text-gray-400 text-sm mb-6">Track and manage all your reservations</p>
+
+      {/* Stay/event completed — leave a review prompts */}
+      {reviewPrompts.length > 0 && (
+        <div className="flex flex-col gap-3 mb-6">
+          {reviewPrompts.map((b) => (
+            <ReviewPromptCard key={b._id} booking={b} onDismiss={dismissPrompt} />
+          ))}
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
@@ -223,7 +366,12 @@ const MyBookingPage = () => {
         <>
           <div className="flex flex-col gap-4">
             {bookings.map((b) => (
-              <BookingCard key={b._id} booking={b} onCancel={handleCancel} />
+              <BookingCard
+                key={b._id}
+                booking={b}
+                onCancel={handleCancel}
+                onPaid={fetchBookings}
+              />
             ))}
           </div>
 

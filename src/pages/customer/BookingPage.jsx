@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getHotelById } from "@/api/hotel";
 import { getEventById } from "@/api/event";
 import { createBooking } from "@/api/booking";
+import { payForBooking } from "@/api/payment";
 import useAuthStore from "@/store/authStore";
 import routes from "@/config/routes";
 import {
@@ -69,6 +70,9 @@ const BookingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState(null);
+  const [paymentPending, setPaymentPending] = useState(false);
+  const [payingNow, setPayingNow] = useState(false);
 
   // ── Booking form state ──────────────────────────────────────────────────────
   const [options, setOptions] = useState({
@@ -240,14 +244,41 @@ const BookingPage = () => {
         guestPhone: guest.guestPhone,
         specialRequests: guest.specialRequests || undefined,
       };
-      await createBooking(payload);
-      setSuccess(true);
+      const data = await createBooking(payload);
+      const bookingId = data.booking?._id;
+      setCreatedBookingId(bookingId);
+
+      // Booking + inventory are reserved server-side; now collect payment.
+      try {
+        await payForBooking({ bookingId });
+        setSuccess(true);
+      } catch (payErr) {
+        // Booking still exists (reserved) but payment didn't go through —
+        // let the customer retry from here or later from My Bookings.
+        setPaymentPending(true);
+        setError(payErr.message || "Payment was not completed.");
+      }
     } catch (err) {
       setError(
         err.response?.data?.message || "Booking failed. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const retryPayment = async () => {
+    if (!createdBookingId) return;
+    setPayingNow(true);
+    setError("");
+    try {
+      await payForBooking({ bookingId: createdBookingId });
+      setPaymentPending(false);
+      setSuccess(true);
+    } catch (payErr) {
+      setError(payErr.message || "Payment was not completed.");
+    } finally {
+      setPayingNow(false);
     }
   };
 
@@ -277,6 +308,44 @@ const BookingPage = () => {
     );
   }
 
+  // ── Payment pending screen ──────────────────────────────────────────────────
+  if (paymentPending) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
+        <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center">
+          <TriangleAlert size={40} className="text-amber-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-green-900">
+          Booking Reserved — Payment Pending
+        </h1>
+        <p className="text-gray-500 text-center max-w-sm">
+          Your booking for <strong>{listing?.name}</strong> is reserved, but
+          the payment wasn't completed. Complete it now to confirm your
+          booking, or pay later from My Bookings.
+        </p>
+        {error && (
+          <p className="text-sm text-red-600 max-w-sm text-center">{error}</p>
+        )}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={retryPayment}
+            disabled={payingNow}
+            className="px-6 py-3 bg-green-900 text-white rounded-xl font-medium flex items-center gap-2 disabled:opacity-70"
+          >
+            {payingNow && <Loader2 size={16} className="animate-spin" />}
+            {payingNow ? "Opening..." : "Pay Now"}
+          </button>
+          <button
+            onClick={() => navigate(routes.customer.mybooking)}
+            className="px-6 py-3 border border-green-200 text-green-800 rounded-xl font-medium"
+          >
+            Pay Later from My Bookings
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ── Success screen ──────────────────────────────────────────────────────────
   if (success) {
     return (
@@ -285,11 +354,11 @@ const BookingPage = () => {
           <CheckCircle2 size={44} className="text-green-700" />
         </div>
         <h1 className="text-2xl font-bold text-green-900">
-          Booking Confirmed!
+          Booking Confirmed &amp; Paid!
         </h1>
         <p className="text-gray-500 text-center max-w-sm">
-          Your booking for <strong>{listing.name}</strong> has been confirmed.
-          Check your bookings for details.
+          Your booking for <strong>{listing.name}</strong> has been confirmed
+          and payment received. Check your bookings for details.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -682,7 +751,7 @@ const BookingPage = () => {
                 ) : (
                   <CheckCircle2 size={16} />
                 )}
-                {isSubmitting ? "Confirming..." : "Confirm Booking"}
+                {isSubmitting ? "Processing..." : "Confirm & Pay"}
               </button>
             )}
           </div>

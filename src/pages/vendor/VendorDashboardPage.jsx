@@ -16,6 +16,15 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
 const StatCard = ({ icon: Icon, iconBg, iconColor, label, value, sub }) => (
   <div className="bg-white border border-green-100 rounded-2xl p-5 flex items-start gap-4">
@@ -162,6 +171,32 @@ const VendorDashboardPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ── Earnings chart ── */}
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+            Earnings — Last 6 Months
+          </p>
+          <div className="bg-white border border-green-100 rounded-2xl p-5 mb-10">
+            {stats?.monthlyRevenue?.some((m) => m.total > 0) ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={stats.monthlyRevenue} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E8F2EB" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={fmt} tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} width={56} />
+                  <Tooltip
+                    formatter={(value) => [`₹${value.toLocaleString("en-IN")}`, "Revenue"]}
+                    contentStyle={{ borderRadius: 12, border: "1px solid #E8F2EB", fontSize: 13 }}
+                  />
+                  <Bar dataKey="total" fill="#1A3C34" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-48 flex flex-col items-center justify-center text-center">
+                <IndianRupee size={28} className="text-gray-300 mb-2" />
+                <p className="text-sm text-gray-400">No confirmed earnings yet in the last 6 months</p>
+              </div>
+            )}
           </div>
 
           {/* ── Quick actions ── */}

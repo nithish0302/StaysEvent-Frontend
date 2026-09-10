@@ -29,3 +29,24 @@ export const deleteReview = async (id) => {
     throw err;
   }
 };
+
+// Vendor replies to a review on their own listing
+export const replyToReview = async (id, text) => {
+  try {
+    const response = await api.patch(`/reviews/${id}/reply`, { text });
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const deleteReviewReply = async (id) => {
+  try {
+    const response = await api.delete(`/reviews/${id}/reply`);
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};

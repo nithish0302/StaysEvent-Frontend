@@ -80,6 +80,7 @@ const RegisterPage = () => {
         <label className="text-sm text-green-900 font-medium">Name</label>
         <input
           type="text"
+          data-testid="register-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="John Doe"
@@ -90,6 +91,7 @@ const RegisterPage = () => {
         </label>
         <input
           type="email"
+          data-testid="register-email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="john@gmail.com"
@@ -101,6 +103,7 @@ const RegisterPage = () => {
         <div className="relative mt-1">
           <input
             type={showPassword ? "text" : "password"}
+            data-testid="register-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
@@ -109,6 +112,7 @@ const RegisterPage = () => {
           <button
             onClick={() => setShowPassword((prev) => !prev)}
             type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
             className="absolute top-1/2 right-8 -translate-y-1/2 text-green-700 cursor-pointer"
           >
             {showPassword ? <VscEye size={18} /> : <VscEyeClosed size={18} />}
@@ -119,15 +123,18 @@ const RegisterPage = () => {
         </label>
         <select
           value={role}
+          data-testid="register-role"
+          aria-label="Select your role"
           onChange={(e) => setRole(e.target.value)}
           className="w-full px-4 py-3 border border-green-200 rounded-md bg-white text-sm text-green-900 outline-none mt-1 focus:border-green-700 focus:ring-2 focus:ring-green-700/10"
         >
           <option value="customer">Customer</option>
           <option value="vendor">Vendor</option>
         </select>
-        {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+        {error && <p data-testid="register-error" className="text-sm text-red-500 mt-1">{error}</p>}
         <button
           type="button"
+          data-testid="register-submit"
           className="border-2 mt-5 bg-green-800 text-white p-3 rounded-md text-lg text-center font-semibold hover:bg-green-700 transition-all duration-200 hover:shadow-md"
           disabled={isloading}
           onClick={handleRegister}

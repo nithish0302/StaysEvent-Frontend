@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -10,7 +10,178 @@ import {
   CalendarDays,
   Ticket,
   Building2,
+  Eye,
+  X,
 } from "lucide-react";
+
+const statusColors = {
+  upcoming: "bg-blue-50 text-blue-800",
+  ongoing: "bg-emerald-50 text-emerald-800",
+  completed: "bg-gray-100 text-gray-600",
+  cancelled: "bg-red-50 text-red-700",
+};
+
+const EventDetailModal = ({ event, onClose }) => {
+  const [activePhoto, setActivePhoto] = useState(0);
+  if (!event) return null;
+  const photos = event.photos?.length ? event.photos : [];
+  const isHall = event.bookingType === "hall";
+  const price = isHall
+    ? event.hallDetails?.pricePerDay
+    : event.ticketDetails?.price;
+  const startDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+  const endDate = event.endDate
+    ? new Date(event.endDate).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/50 overflow-y-auto p-3 sm:p-4"
+      onClick={onClose}
+    >
+      <div className="min-h-full flex items-start sm:items-center justify-center">
+        <div
+          className="bg-white rounded-xl w-full max-w-lg sm:max-w-2xl my-4 sm:my-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+        <div className="relative">
+          <img
+            src={photos[activePhoto] || photos[0]}
+            alt={event.name}
+            className="w-full h-40 sm:h-56 object-cover rounded-t-xl"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 bg-white/90 rounded-full p-1.5 hover:bg-white"
+          >
+            <X size={18} className="text-green-900" />
+          </button>
+          <span
+            className={`absolute top-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-full capitalize
+              ${statusColors[event.status] || "bg-gray-100 text-gray-600"}`}
+          >
+            {event.status}
+          </span>
+        </div>
+
+        <div className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-xl font-semibold text-green-900">
+              {event.name}
+            </h2>
+            <span
+              className={`shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full ${
+                event.isActive
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {event.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 text-sm text-green-600 mt-1.5">
+            <MapPin size={14} />
+            <span>
+              {event.location?.address}, {event.location?.city},{" "}
+              {event.location?.state}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 text-sm text-gray-500 mt-1.5">
+            <CalendarDays size={14} />
+            <span>
+              {startDate}
+              {endDate ? ` – ${endDate}` : ""}
+            </span>
+          </div>
+
+          <p className="text-sm text-green-800/80 mt-3 leading-relaxed">
+            {event.description}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="bg-green-50 rounded-lg p-3">
+              <p className="text-[11px] text-green-600 mb-0.5">
+                {isHall ? "Price / Day" : "Price / Ticket"}
+              </p>
+              <p className="flex items-center gap-0.5 font-semibold text-green-900">
+                <IndianRupee size={14} />
+                {price?.toLocaleString() ?? "—"}
+              </p>
+            </div>
+            <div className="bg-green-50 rounded-lg p-3">
+              <p className="text-[11px] text-green-600 mb-0.5">
+                {isHall ? "Halls Available" : "Seats Available"}
+              </p>
+              <p className="flex items-center gap-1 font-semibold text-green-900">
+                {isHall ? <Building2 size={14} /> : <Ticket size={14} />}
+                {isHall
+                  ? `${event.hallDetails?.availableHalls ?? "—"} / ${event.hallDetails?.totalHalls ?? "—"}`
+                  : `${event.ticketDetails?.availableSeats ?? "—"} / ${event.ticketDetails?.totalSeats ?? "—"}`}
+              </p>
+            </div>
+          </div>
+
+          {event.amenities?.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[11px] text-green-600 mb-1.5">Amenities</p>
+              <div className="flex flex-wrap gap-1.5">
+                {event.amenities.map((a, i) => (
+                  <span
+                    key={i}
+                    className="text-xs bg-green-100 text-green-800 px-2.5 py-1 rounded-full"
+                  >
+                    {a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {photos.length > 1 && (
+            <div className="mt-4">
+              <p className="text-[11px] text-green-600 mb-1.5">
+                Photos ({photos.length})
+              </p>
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
+                {photos.map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActivePhoto(i)}
+                    className={`aspect-square rounded-md overflow-hidden border-2 transition-colors ${
+                      i === activePhoto
+                        ? "border-yellow-500"
+                        : "border-transparent hover:border-green-200"
+                    }`}
+                  >
+                    <img
+                      src={p}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const VendorEventCard = ({
   event,
@@ -19,6 +190,7 @@ const VendorEventCard = ({
   isToggling,
 }) => {
   const navigate = useNavigate();
+  const [showDetail, setShowDetail] = useState(false);
 
   const isHall = event.bookingType === "hall";
   const price = isHall
@@ -33,17 +205,13 @@ const VendorEventCard = ({
       })
     : "—";
 
-  const statusColors = {
-    upcoming: "bg-blue-50 text-blue-800",
-    ongoing: "bg-emerald-50 text-emerald-800",
-    completed: "bg-gray-100 text-gray-600",
-    cancelled: "bg-red-50 text-red-700",
-  };
-
   return (
     <div className="bg-white rounded-xl border border-green-100 overflow-hidden">
       {/* IMAGE */}
-      <div className="relative h-32 sm:h-36">
+      <div
+        className="relative h-32 sm:h-36 cursor-pointer"
+        onClick={() => setShowDetail(true)}
+      >
         <img
           src={event.photos?.[0]}
           alt={event.name}
@@ -76,7 +244,7 @@ const VendorEventCard = ({
       </div>
 
       {/* CONTENT */}
-      <div className="p-3">
+      <div className="p-3 cursor-pointer" onClick={() => setShowDetail(true)}>
         <p className="font-semibold text-green-900 text-[15px] mb-1 truncate">
           {event.name}
         </p>
@@ -111,6 +279,14 @@ const VendorEventCard = ({
       {/* ACTION ROW */}
       <div className="flex border-t border-green-100">
         <button
+          onClick={() => setShowDetail(true)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-green-900 border-r border-green-100 hover:bg-green-50 transition-colors"
+        >
+          <Eye size={14} />
+          View
+        </button>
+
+        <button
           onClick={() => navigate(`/vendor/edit-event/${event._id}`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-green-900 border-r border-green-100 hover:bg-green-50 transition-colors"
         >
@@ -140,6 +316,10 @@ const VendorEventCard = ({
           Delete
         </button>
       </div>
+
+      {showDetail && (
+        <EventDetailModal event={event} onClose={() => setShowDetail(false)} />
+      )}
     </div>
   );
 };

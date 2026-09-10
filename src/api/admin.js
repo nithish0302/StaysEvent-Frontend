@@ -39,3 +39,24 @@ export const getAllUsers = async (params = {}) => {
     throw err;
   }
 };
+
+// itemType: "hotel" | "event"
+export const toggleFeaturedListing = async (itemType, id) => {
+  try {
+    const response = await api.patch(`/admin/listings/${itemType}/${id}/feature`);
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const getAllBookingsAdmin = async (params = {}) => {
+  try {
+    const response = await api.get("/admin/bookings", { params });
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};

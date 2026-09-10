@@ -34,6 +34,11 @@ const routes = {
     dashboard: "/admin",
     vendor: "/admin/vendor",
   },
+
+  account: {
+    profile: "/profile",
+    settings: "/settings",
+  },
 };
 
 export default routes;

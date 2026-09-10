@@ -32,7 +32,7 @@ const AuthImagePanel = () => {
       ></div>
       <div className="absolute inset-0 bg-green-900/65 "></div>
       <div className="absolute top-7 left-7 text-gray-50 font-display text-2xl font-bold">
-        Stay<span className="text-yellow-500">Event</span>
+        Stay<span className="text-yellow-500">Events</span>
       </div>
 
       <div className="absolute bottom-8 left-8  right-8 flex flex-col gap-3">

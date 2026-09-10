@@ -40,7 +40,7 @@
 
 @layer components {
   .section-eyebrow {
-    @apply font-label text-xs tracking-widest text-gold-500 uppercase;
+    @apply font-label text-xs tracking-widest text-gold-700 uppercase;
   }
 
   .section-title {

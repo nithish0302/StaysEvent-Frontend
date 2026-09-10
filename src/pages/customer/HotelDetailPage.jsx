@@ -279,7 +279,7 @@ const HotelDetailPage = () => {
         {/* Reviews */}
         {hotel && (
           <div className="mt-8">
-            <ReviewSection itemId={hotel._id} itemType="HOTEL" />
+            <ReviewSection itemId={hotel._id} itemType="HOTEL" ownerVendorId={vendor?._id} />
           </div>
         )}
       </div>

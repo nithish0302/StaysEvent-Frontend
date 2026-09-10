@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { getAdminStats, getVendors, updateVendorStatus, getAllUsers } from "@/api/admin";
+import {
+  getAdminStats, getVendors, updateVendorStatus, getAllUsers,
+  toggleFeaturedListing, getAllBookingsAdmin,
+} from "@/api/admin";
+import { getAllHotels } from "@/api/hotel";
+import { getAllEvents } from "@/api/event";
 import {
   Users, Hotel, CalendarDays, BookOpen, IndianRupee,
   Clock, CheckCircle2, XCircle, Loader2, TriangleAlert,
   ShieldCheck, ShieldOff, ChevronDown, X, Phone, Mail, MapPin,
-  Building2, FileText, CreditCard, Briefcase,
+  Building2, FileText, CreditCard, Briefcase, Sparkles, Star,
 } from "lucide-react";
 
 const StatCard = ({ icon: Icon, iconBg, iconColor, label, value, sub }) => (
@@ -147,18 +152,18 @@ const VendorDetailModal = ({ vendor, onClose, onStatusUpdate }) => {
           )}
 
           {/* Documents */}
-          {(vd.idProof || vd.businessDoc) && (
+          {(vd.idProofUrl || vd.businessDocUrl) && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Documents</p>
               <div className="flex flex-wrap gap-2">
-                {vd.idProof && (
-                  <a href={vd.idProof} target="_blank" rel="noreferrer"
+                {vd.idProofUrl && (
+                  <a href={vd.idProofUrl} target="_blank" rel="noreferrer"
                     className="flex items-center gap-1.5 text-xs text-blue-700 border border-blue-200 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100">
                     <FileText size={13} /> ID Proof
                   </a>
                 )}
-                {vd.businessDoc && (
-                  <a href={vd.businessDoc} target="_blank" rel="noreferrer"
+                {vd.businessDocUrl && (
+                  <a href={vd.businessDocUrl} target="_blank" rel="noreferrer"
                     className="flex items-center gap-1.5 text-xs text-blue-700 border border-blue-200 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100">
                     <FileText size={13} /> Business Doc
                   </a>
@@ -275,6 +280,150 @@ const VendorRow = ({ vendor, onStatusUpdate, onViewDetails }) => {
   );
 };
 
+// ── Listings management (featured toggle) ───────────────────────────────────────
+const ListingsPanel = () => {
+  const [tab, setTab] = useState("hotel");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    const fetcher = tab === "hotel" ? getAllHotels({ limit: 50 }) : getAllEvents({ limit: 50 });
+    fetcher
+      .then((d) => setItems(tab === "hotel" ? d.hotels || [] : d.events || []))
+      .catch(() => setError("Failed to load listings."))
+      .finally(() => setLoading(false));
+  }, [tab]);
+
+  const handleToggle = async (id) => {
+    try {
+      const data = await toggleFeaturedListing(tab, id);
+      setItems((prev) => prev.map((it) => (it._id === id ? { ...it, isFeatured: data.isFeatured } : it)));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update featured status");
+    }
+  };
+
+  return (
+    <div className="bg-white border border-green-100 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold text-green-900">Featured Listings</h2>
+        <div className="flex gap-1">
+          {["hotel", "event"].map((t) => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`text-xs px-2.5 py-1 rounded-full border capitalize transition-all ${tab === t ? "bg-green-800 text-white border-green-800" : "border-green-200 text-green-700 hover:bg-green-50"}`}>
+              {t}s
+            </button>
+          ))}
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+      {loading ? (
+        <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
+      ) : items.length === 0 ? (
+        <p className="text-gray-400 text-sm text-center py-8">No {tab}s found</p>
+      ) : (
+        <div className="max-h-[420px] overflow-y-auto pr-1">
+          {items.map((it) => (
+            <div key={it._id} className="flex items-center justify-between gap-3 py-3 border-b border-green-50 last:border-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-green-100 overflow-hidden shrink-0 flex items-center justify-center">
+                  {it.photos?.[0] ? (
+                    <img src={it.photos[0]} alt={it.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Hotel size={16} className="text-green-700" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-green-900 truncate">{it.name}</p>
+                  <p className="text-xs text-gray-400 truncate flex items-center gap-1">
+                    <Star size={10} className="fill-gold-500 text-gold-500" /> {it.avgRating ?? 0} · {it.location?.city}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle(it._id)}
+                className={`flex items-center gap-1.5 shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${it.isFeatured ? "bg-yellow-100 border-yellow-400 text-yellow-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+              >
+                <Sparkles size={12} />
+                {it.isFeatured ? "Featured" : "Feature"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── All bookings view ─────────────────────────────────────────────────────────
+const BOOKING_STATUS_STYLES = {
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-blue-50 text-blue-700 border-blue-200",
+  cancelled: "bg-red-50 text-red-700 border-red-200",
+};
+
+const BookingsPanel = () => {
+  const [bookings, setBookings] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    getAllBookingsAdmin({ status: statusFilter || undefined, limit: 30 })
+      .then((d) => setBookings(d.bookings || []))
+      .catch(() => setError("Failed to load bookings."))
+      .finally(() => setLoading(false));
+  }, [statusFilter]);
+
+  return (
+    <div className="bg-white border border-green-100 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold text-green-900">All Bookings</h2>
+        <div className="flex gap-1 flex-wrap">
+          {["", "pending", "confirmed", "completed", "cancelled"].map((s) => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`text-xs px-2.5 py-1 rounded-full border capitalize transition-all ${statusFilter === s ? "bg-green-800 text-white border-green-800" : "border-green-200 text-green-700 hover:bg-green-50"}`}>
+              {s || "All"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+      {loading ? (
+        <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
+      ) : bookings.length === 0 ? (
+        <p className="text-gray-400 text-sm text-center py-8">No bookings found</p>
+      ) : (
+        <div className="max-h-[480px] overflow-y-auto pr-1">
+          {bookings.map((b) => {
+            const itemName = b.bookingCategory === "hotel" ? b.hotelId?.name : b.eventId?.name;
+            return (
+              <div key={b._id} className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-green-50 last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-green-900 truncate">{itemName || "Listing"}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {b.customerId?.name} → {b.vendorId?.name || b.vendorId?.vendorDetails?.businessName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-green-900 font-medium">₹{b.totalAmount?.toLocaleString("en-IN")}</span>
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium capitalize ${BOOKING_STATUS_STYLES[b.status] || BOOKING_STATUS_STYLES.pending}`}>
+                    {b.status}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Admin Dashboard Page ───────────────────────────────────────────────────────
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
@@ -286,6 +435,7 @@ const AdminDashboardPage = () => {
   const [usersLoading, setUsersLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [activeSection, setActiveSection] = useState("overview");
 
   const fmt = (n) =>
     n >= 100000 ? `₹${(n / 100000).toFixed(1)}L`
@@ -328,7 +478,23 @@ const AdminDashboardPage = () => {
   return (
     <div className="page-wrapper py-10 px-4 sm:px-8 lg:px-16">
       <h1 className="text-2xl font-bold text-green-900 mb-1">Admin Dashboard</h1>
-      <p className="text-gray-400 text-sm mb-8">Platform overview and vendor management</p>
+      <p className="text-gray-400 text-sm mb-6">Platform overview and vendor management</p>
+
+      <div className="flex gap-2 mb-8 border-b border-green-100">
+        {[
+          { key: "overview", label: "Overview" },
+          { key: "listings", label: "Featured Listings" },
+          { key: "bookings", label: "Bookings" },
+        ].map((s) => (
+          <button
+            key={s.key}
+            onClick={() => setActiveSection(s.key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-all ${activeSection === s.key ? "border-green-800 text-green-900" : "border-transparent text-gray-400 hover:text-green-700"}`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
       {error && (
         <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-xl mb-4 text-sm">
@@ -354,65 +520,70 @@ const AdminDashboardPage = () => {
         </>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vendor management */}
-        <div className="bg-white border border-green-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-green-900">Vendor Management</h2>
-            <div className="flex gap-1">
-              {["", "pending", "approved", "rejected", "suspended"].map((s) => (
-                <button key={s} onClick={() => setVendorFilter(s)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-all ${vendorFilter === s ? "bg-green-800 text-white border-green-800" : "border-green-200 text-green-700 hover:bg-green-50"}`}>
-                  {s || "All"}
-                </button>
-              ))}
+      {activeSection === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Vendor management */}
+          <div className="bg-white border border-green-100 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-semibold text-green-900">Vendor Management</h2>
+              <div className="flex gap-1">
+                {["", "pending", "approved", "rejected", "suspended"].map((s) => (
+                  <button key={s} onClick={() => setVendorFilter(s)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-all ${vendorFilter === s ? "bg-green-800 text-white border-green-800" : "border-green-200 text-green-700 hover:bg-green-50"}`}>
+                    {s || "All"}
+                  </button>
+                ))}
+              </div>
             </div>
+            <p className="text-[11px] text-gray-400 mb-4">Click a vendor name to view full details</p>
+
+            {vendorsLoading ? (
+              <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
+            ) : vendors.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">No vendors found</p>
+            ) : (
+              <div>
+                {vendors.map((v) => (
+                  <VendorRow
+                    key={v._id}
+                    vendor={v}
+                    onStatusUpdate={handleVendorStatusUpdate}
+                    onViewDetails={setSelectedVendor}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-          <p className="text-[11px] text-gray-400 mb-4">Click a vendor name to view full details</p>
 
-          {vendorsLoading ? (
-            <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
-          ) : vendors.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">No vendors found</p>
-          ) : (
-            <div>
-              {vendors.map((v) => (
-                <VendorRow
-                  key={v._id}
-                  vendor={v}
-                  onStatusUpdate={handleVendorStatusUpdate}
-                  onViewDetails={setSelectedVendor}
-                />
-              ))}
-            </div>
-          )}
+          {/* Recent customers */}
+          <div className="bg-white border border-green-100 rounded-2xl p-5">
+            <h2 className="font-semibold text-green-900 mb-4">Recent Customers</h2>
+            {usersLoading ? (
+              <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
+            ) : users.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">No users yet</p>
+            ) : (
+              <div>
+                {users.map((u) => (
+                  <div key={u._id} className="flex items-center gap-3 py-3 border-b border-green-50 last:border-0">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm shrink-0">
+                      {u.name?.[0]?.toUpperCase() || "U"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-green-900 truncate">{u.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">{new Date(u.createdAt).toLocaleDateString("en-IN")}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+      )}
 
-        {/* Recent customers */}
-        <div className="bg-white border border-green-100 rounded-2xl p-5">
-          <h2 className="font-semibold text-green-900 mb-4">Recent Customers</h2>
-          {usersLoading ? (
-            <div className="flex justify-center items-center h-20"><Loader2 size={20} className="animate-spin text-green-600" /></div>
-          ) : users.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">No users yet</p>
-          ) : (
-            <div>
-              {users.map((u) => (
-                <div key={u._id} className="flex items-center gap-3 py-3 border-b border-green-50 last:border-0">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm shrink-0">
-                    {u.name?.[0]?.toUpperCase() || "U"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-green-900 truncate">{u.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                  </div>
-                  <span className="text-xs text-gray-400">{new Date(u.createdAt).toLocaleDateString("en-IN")}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {activeSection === "listings" && <ListingsPanel />}
+      {activeSection === "bookings" && <BookingsPanel />}
 
       {/* Vendor Detail Modal */}
       {selectedVendor && (

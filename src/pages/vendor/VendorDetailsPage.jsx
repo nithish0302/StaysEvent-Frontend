@@ -1,9 +1,12 @@
 import { updateVendorDetails } from "@/api/auth";
 import routes from "@/config/routes";
 import useAuthStore from "@/store/authStore";
+import { uploadDocumentToCloudinary } from "@/utils/cloudinary";
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FileText, Loader2, CheckCircle2, UploadCloud } from "lucide-react";
 
 const VendorDetailsPage = () => {
   const navigate = useNavigate();
@@ -15,8 +18,28 @@ const VendorDetailsPage = () => {
     panNumber: "",
     businessAddress: "",
     city: "",
+    idProofUrl: "",
+    businessDocUrl: "",
   });
   const [error, setError] = useState({});
+  const [uploading, setUploading] = useState({ idProof: false, businessDoc: false });
+
+  const handleDocUpload = async (key, field, file) => {
+    if (!file) return;
+    setUploading((prev) => ({ ...prev, [key]: true }));
+    try {
+      const url = await uploadDocumentToCloudinary(
+        file,
+        import.meta.env.VITE_CLOUDINARY_HOTEL_PRESET,
+      );
+      setFormData((prev) => ({ ...prev, [field]: url }));
+    } catch (err) {
+      console.log("Document upload failed", err);
+      setError((prev) => ({ ...prev, [field]: "Upload failed — please try again" }));
+    } finally {
+      setUploading((prev) => ({ ...prev, [key]: false }));
+    }
+  };
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -91,9 +114,13 @@ const VendorDetailsPage = () => {
     try {
       const data = await updateVendorDetails(formData);
       useAuthStore.getState().setUser(data.user);
+      toast.success("Business details submitted for approval");
       navigate(routes.vendor.pendingApproval);
     } catch (err) {
-      console.log("Error Occurred", err);
+      toast.error(
+        err.response?.data?.message ||
+          "Couldn't submit your details — please try again",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -233,6 +260,79 @@ const VendorDetailsPage = () => {
               <p className="text-red-500 text-sm mt-1">{error.city}</p>
             )}
           </div>
+
+          {/* ID Proof */}
+          <div>
+            <p className="pt-2">ID Proof (optional):</p>
+            <label className="flex items-center gap-2 w-full px-4 py-3 border border-dashed border-green-300 rounded-md bg-white text-sm text-green-700 mt-1 cursor-pointer hover:bg-green-50 transition-all">
+              {uploading.idProof ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : formData.idProofUrl ? (
+                <CheckCircle2 size={16} className="text-green-700" />
+              ) : (
+                <UploadCloud size={16} />
+              )}
+              <span className="truncate">
+                {uploading.idProof
+                  ? "Uploading..."
+                  : formData.idProofUrl
+                    ? "Uploaded — click to replace"
+                    : "Upload Aadhaar / PAN / passport scan"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => handleDocUpload("idProof", "idProofUrl", e.target.files?.[0])}
+              />
+            </label>
+            {formData.idProofUrl && (
+              <a href={formData.idProofUrl} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1 text-xs text-blue-700 mt-1">
+                <FileText size={12} /> View uploaded file
+              </a>
+            )}
+            {error.idProofUrl && (
+              <p className="text-red-500 text-sm mt-1">{error.idProofUrl}</p>
+            )}
+          </div>
+
+          {/* Business Doc */}
+          <div>
+            <p className="pt-2">Business Document (optional):</p>
+            <label className="flex items-center gap-2 w-full px-4 py-3 border border-dashed border-green-300 rounded-md bg-white text-sm text-green-700 mt-1 cursor-pointer hover:bg-green-50 transition-all">
+              {uploading.businessDoc ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : formData.businessDocUrl ? (
+                <CheckCircle2 size={16} className="text-green-700" />
+              ) : (
+                <UploadCloud size={16} />
+              )}
+              <span className="truncate">
+                {uploading.businessDoc
+                  ? "Uploading..."
+                  : formData.businessDocUrl
+                    ? "Uploaded — click to replace"
+                    : "Upload GST certificate / business license"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => handleDocUpload("businessDoc", "businessDocUrl", e.target.files?.[0])}
+              />
+            </label>
+            {formData.businessDocUrl && (
+              <a href={formData.businessDocUrl} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1 text-xs text-blue-700 mt-1">
+                <FileText size={12} /> View uploaded file
+              </a>
+            )}
+            {error.businessDocUrl && (
+              <p className="text-red-500 text-sm mt-1">{error.businessDocUrl}</p>
+            )}
+          </div>
+
           <div className="md:col-span-2 sm:hidden mt-4">
             <button
               type="submit"

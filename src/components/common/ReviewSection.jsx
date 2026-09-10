@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getReviews, createReview, deleteReview } from "@/api/review";
+import { getReviews, createReview, deleteReview, replyToReview, deleteReviewReply } from "@/api/review";
 import useAuthStore from "@/store/authStore";
 import {
   Star,
@@ -7,6 +7,8 @@ import {
   Trash2,
   TriangleAlert,
   MessageSquare,
+  CornerDownRight,
+  ShieldAlert,
 } from "lucide-react";
 
 const StarPicker = ({ value, onChange }) => (
@@ -38,9 +40,87 @@ const StarRow = ({ n }) => (
   </span>
 );
 
-const ReviewSection = ({ itemId, itemType }) => {
+// Vendor's reply block under a review — shown to everyone once posted,
+// editable only by the owning vendor (isOwner).
+const VendorReplyBlock = ({ review, isOwner, onSave, onDelete }) => {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(review.vendorReply?.text || "");
+  const [saving, setSaving] = useState(false);
+
+  const hasReply = !!review.vendorReply?.text;
+
+  const handleSave = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      await onSave(review._id, text.trim());
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!hasReply && !isOwner) return null;
+
+  return (
+    <div className="ml-6 mt-2 pl-3 border-l-2 border-green-200">
+      {hasReply && !editing ? (
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-1.5">
+            <CornerDownRight size={13} className="text-green-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-green-800">Vendor response</p>
+              <p className="text-sm text-gray-600">{review.vendorReply.text}</p>
+            </div>
+          </div>
+          {isOwner && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => setEditing(true)} className="text-[11px] text-green-700 hover:underline">
+                Edit
+              </button>
+              <button onClick={() => onDelete(review._id)} className="text-[11px] text-red-500 hover:underline">
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+      ) : isOwner ? (
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={2}
+            placeholder="Reply to this review as the vendor..."
+            className="w-full border border-green-200 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:border-green-500 bg-white"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={saving || !text.trim()}
+              className="px-3 py-1.5 bg-green-800 text-white text-xs rounded-lg disabled:opacity-60 flex items-center gap-1.5"
+            >
+              {saving && <Loader2 size={12} className="animate-spin" />}
+              {hasReply ? "Update Reply" : "Post Reply"}
+            </button>
+            {editing && (
+              <button onClick={() => { setEditing(false); setText(review.vendorReply?.text || ""); }} className="text-xs text-gray-400 hover:underline">
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const ReviewSection = ({ itemId, itemType, ownerVendorId }) => {
   const user = useAuthStore((s) => s.user);
   const isCustomer = user?.role === "customer";
+  const isAdmin = user?.role === "admin";
+  // Only the vendor who owns this listing may reply — ownerVendorId is
+  // passed down from the detail page (populated from hotel/event.vendorId).
+  const isOwnerVendor = user?.role === "vendor" && ownerVendorId && user.id === ownerVendorId;
 
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
@@ -48,6 +128,7 @@ const ReviewSection = ({ itemId, itemType }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   // Form state
   const [rating, setRating] = useState(0);
@@ -60,10 +141,14 @@ const ReviewSection = ({ itemId, itemType }) => {
     setLoading(true);
     try {
       const data = await getReviews(itemId, itemType, { page: p, limit: 5 });
-      setReviews(data.reviews || []);
+      const list = data.reviews || [];
+      setReviews(list);
       setAvgRating(data.avgRating || 0);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
+      if (user?.id && list.some((r) => r.customerId?._id === user.id)) {
+        setHasReviewed(true);
+      }
     } catch {
       // silent
     } finally {
@@ -73,6 +158,7 @@ const ReviewSection = ({ itemId, itemType }) => {
 
   useEffect(() => {
     if (itemId) fetchReviews(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, page]);
 
   const handleSubmit = async (e) => {
@@ -89,9 +175,16 @@ const ReviewSection = ({ itemId, itemType }) => {
       setRating(0);
       setComment("");
       setFormSuccess("Review submitted successfully!");
+      setHasReviewed(true);
       fetchReviews(1);
     } catch (err) {
-      setFormError(err.response?.data?.message || "Failed to submit review.");
+      const message = err.response?.data?.message || "Failed to submit review.";
+      setFormError(message);
+      // Backend rejected it as a duplicate — lock the form so they can't
+      // keep retrying; their existing review is already listed below.
+      if (err.response?.status === 400 && /already reviewed/i.test(message)) {
+        setHasReviewed(true);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -100,11 +193,27 @@ const ReviewSection = ({ itemId, itemType }) => {
   const handleDelete = async (reviewId) => {
     try {
       await deleteReview(reviewId);
-      setReviews((prev) => prev.filter((r) => r._id !== reviewId));
+      setReviews((prev) => {
+        const deleted = prev.find((r) => r._id === reviewId);
+        if (deleted && deleted.customerId?._id === user?.id) {
+          setHasReviewed(false);
+        }
+        return prev.filter((r) => r._id !== reviewId);
+      });
       setTotal((t) => t - 1);
     } catch {
       // silent
     }
+  };
+
+  const handleReplySave = async (reviewId, text) => {
+    const data = await replyToReview(reviewId, text);
+    setReviews((prev) => prev.map((r) => (r._id === reviewId ? { ...r, vendorReply: data.review.vendorReply } : r)));
+  };
+
+  const handleReplyDelete = async (reviewId) => {
+    await deleteReviewReply(reviewId);
+    setReviews((prev) => prev.map((r) => (r._id === reviewId ? { ...r, vendorReply: { text: null, repliedAt: null } } : r)));
   };
 
   return (
@@ -119,8 +228,15 @@ const ReviewSection = ({ itemId, itemType }) => {
         )}
       </div>
 
+      {/* Already reviewed — no second submission allowed */}
+      {isCustomer && hasReviewed && (
+        <div className="bg-green-50 border border-green-100 rounded-2xl p-4 mb-8 text-sm text-green-800">
+          You've already reviewed this. You can edit your review by deleting it below and writing a new one.
+        </div>
+      )}
+
       {/* Write a review */}
-      {isCustomer && (
+      {isCustomer && !hasReviewed && (
         <form
           onSubmit={handleSubmit}
           className="bg-green-50 border border-green-100 rounded-2xl p-5 mb-8 flex flex-col gap-4"
@@ -151,6 +267,18 @@ const ReviewSection = ({ itemId, itemType }) => {
             Submit Review
           </button>
         </form>
+      )}
+
+      {isOwnerVendor && (
+        <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-4">
+          <CornerDownRight size={13} /> You can reply to reviews on this listing below.
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-4">
+          <ShieldAlert size={13} /> Admin moderation — you can remove any review below.
+        </div>
       )}
 
       {/* Reviews list */}
@@ -185,9 +313,10 @@ const ReviewSection = ({ itemId, itemType }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <StarRow n={r.rating} />
-                  {user?.id === r.customerId?._id && (
+                  {(user?.id === r.customerId?._id || isAdmin) && (
                     <button
                       onClick={() => handleDelete(r._id)}
+                      title={isAdmin && user?.id !== r.customerId?._id ? "Remove review (admin)" : "Delete your review"}
                       className="text-gray-300 hover:text-red-400 transition-colors"
                     >
                       <Trash2 size={14} />
@@ -200,6 +329,13 @@ const ReviewSection = ({ itemId, itemType }) => {
                   {r.comment}
                 </p>
               )}
+
+              <VendorReplyBlock
+                review={r}
+                isOwner={isOwnerVendor}
+                onSave={handleReplySave}
+                onDelete={handleReplyDelete}
+              />
             </div>
           ))}
 

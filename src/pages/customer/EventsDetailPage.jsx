@@ -252,6 +252,7 @@ const EventsDetailPage = () => {
                     <p className="text-xs text-green-500">Venue</p>
                     <p className="font-medium text-green-900">
                       {event.location.address}, {event.location.city}
+                      {event.location.pinCode ? ` - ${event.location.pinCode}` : ""}
                     </p>
                   </div>
                 </div>
@@ -662,7 +663,7 @@ const EventsDetailPage = () => {
         {/* Reviews */}
         {event && (
           <div className="mt-8">
-            <ReviewSection itemId={event._id} itemType="EVENT" />
+            <ReviewSection itemId={event._id} itemType="EVENT" ownerVendorId={vendor?._id} />
           </div>
         )}
       </div>

@@ -71,14 +71,17 @@ const LoginPage = () => {
             Create one
           </span>
         </p>
-        <label className="text-sm font-medium text-green-900">
+        <label htmlFor="login-email" className="text-sm font-medium text-green-900">
           Email Address
         </label>
         <input
           type="email"
+          id="login-email"
+          data-testid="login-email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder=""
+          placeholder="Enter your email"
+          aria-label="Email Address"
           className="w-full px-4 py-3 border border-green-200 rounded-md bg-white text-sm text-green-900 outline-none mt-1 focus:border-green-700 focus:ring-2 focus:ring-green-700/10 placeholder:text-green-700/60 transition-all duration-200"
         />
         <label className="text-sm font-medium text-green-900 mt-2">
@@ -87,6 +90,7 @@ const LoginPage = () => {
         <div className="relative mt-1">
           <input
             type={showPassword ? "text" : "password"}
+            data-testid="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
@@ -95,17 +99,19 @@ const LoginPage = () => {
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
             className="absolute top-1/2 right-8 -translate-y-1/2 text-green-700 cursor-pointer"
           >
             {showPassword ? <VscEye size={18} /> : <VscEyeClosed size={18} />}
           </button>
         </div>
-        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        {error && <p data-testid="login-error" className="text-red-500 text-sm mt-1">{error}</p>}
         <div className="text-end mt-1 mr-2 cursor-pointer text-[14.5px] font-sans text-green-700 font-medium hover:underline">
           Forgot Password ?
         </div>
         <button
           type="button"
+          data-testid="login-submit"
           className="border-2 mt-5 bg-green-800 text-white p-3 rounded-md text-lg text-center font-semibold hover:bg-green-700 transition-all duration-200 hover:shadow-md"
           onClick={handleLogin}
           disabled={loading}

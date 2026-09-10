@@ -1,0 +1,97 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: frontend
+
+      # The E2E suite exercises real signup/login/browse flows against a
+      # running backend, so this job also checks out and boots the backend
+      # repo (with an in-memory-friendly Mongo service) alongside it.
+      - uses: actions/checkout@v4
+        with:
+          repository: nithish0302/StaysEvent-Backend
+          path: backend
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: 7.0
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      # Creates a fixed admin account the E2E suite can log in as. The
+      # public register endpoint only allows role customer|vendor by
+      # design, so there's no legitimate way to reach admin-only flows
+      # (vendor approval, etc.) from a fresh CI database without this.
+      - name: Bootstrap E2E admin account
+        working-directory: backend
+        run: node scripts/ensureE2EAdmin.js
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017/stayevents-e2e
+          E2E_ADMIN_EMAIL: e2e-admin@stayevents-demo.test
+          E2E_ADMIN_PASSWORD: E2eAdmin@1234
+
+      - name: Start backend
+        working-directory: backend
+        run: nohup npm start &
+        env:
+          PORT: 5000
+          MONGODB_URI: mongodb://127.0.0.1:27017/stayevents-e2e
+          JWT_SECRET: e2e-jwt-secret
+          JWT_REFRESH_SECRET: e2e-jwt-refresh-secret
+          CLIENT_URL: http://localhost:5173
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:5000/api
+
+      - name: Start frontend preview server
+        working-directory: frontend
+        run: nohup npm run preview -- --port 5173 &
+
+      - name: Wait for servers
+        run: |
+          npx wait-on http://localhost:5000 http://localhost:5173 --timeout 60000
+
+      - name: Run Playwright E2E suite
+        working-directory: frontend
+        run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:5173
+          E2E_ADMIN_EMAIL: e2e-admin@stayevents-demo.test
+          E2E_ADMIN_PASSWORD: E2eAdmin@1234
+          CI: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14

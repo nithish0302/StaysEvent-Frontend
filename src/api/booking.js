@@ -69,3 +69,43 @@ export const getVendorStats = async () => {
     throw err;
   }
 };
+
+export const getVendorNewBookingsCount = async () => {
+  try {
+    const response = await api.get("/bookings/vendor/new-count");
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const markVendorBookingsSeen = async () => {
+  try {
+    const response = await api.patch("/bookings/vendor/mark-seen");
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const getPendingReviewBookings = async () => {
+  try {
+    const response = await api.get("/bookings/customer/pending-review");
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};
+
+export const dismissReviewPrompt = async (id) => {
+  try {
+    const response = await api.patch(`/bookings/${id}/dismiss-review-prompt`);
+    return response.data;
+  } catch (err) {
+    console.log(`Error occurred ${err.message}`);
+    throw err;
+  }
+};

@@ -1,16 +1,35 @@
 import useAuthStore from "@/store/authStore";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { logout } from "@/api/auth";
+import { getVendorNewBookingsCount } from "@/api/booking";
 import routes from "@/config/routes";
 const Navbar = () => {
   const { user, isLoggedIn } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [newBookingCount, setNewBookingCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+
+  // Poll for new bookings so a vendor sees a badge on "Bookings" as soon as
+  // a customer books, even before they open the page.
+  const isVendor = user?.role?.toLowerCase() === "vendor";
+  useEffect(() => {
+    if (!isVendor) return;
+    const fetchCount = () => {
+      getVendorNewBookingsCount()
+        .then((data) => setNewBookingCount(data.count || 0))
+        .catch(() => {});
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+    // Re-poll fresh whenever the vendor navigates (e.g. away from and back
+    // to the Bookings page, which clears the server-side unseen flag).
+  }, [isVendor, location.pathname]);
   const handleLogout = async () => {
     try {
       await logout();
@@ -38,7 +57,7 @@ const Navbar = () => {
           onClick={handleLogoClick}
           className="font-display text-gray-50 font-bold text-3xl cursor-pointer mt-1"
         >
-          Stay<span className="text-yellow-500">Event</span>
+          Stay<span className="text-yellow-500">Events</span>
         </div>
 
         <div className="hidden lg:flex items-center gap-8">
@@ -142,13 +161,18 @@ const Navbar = () => {
               </Link>
               <Link
                 to={routes.vendor.bookings}
-                className={`font-sans text-sm font-medium transition-colors cursor-pointer ${
+                className={`relative font-sans text-sm font-medium transition-colors cursor-pointer ${
                   isActive(routes.vendor.bookings)
                     ? "text-yellow-500 border-b-2 border-yellow-500"
                     : "text-white"
                 }`}
               >
                 Bookings
+                {newBookingCount > 0 && (
+                  <span className="absolute -top-2 -right-3.5 bg-yellow-500 text-green-950 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {newBookingCount > 9 ? "9+" : newBookingCount}
+                  </span>
+                )}
               </Link>
             </>
           )}
@@ -167,7 +191,7 @@ const Navbar = () => {
 
           {!isLoggedIn && (
             <button
-              className="  bg-yellow-600 text-green-900 font-sans font-semibold px-5 py-2 rounded-full hover:bg-yellow-500 text-sm transition-all duration-200"
+              className="  bg-yellow-600 text-gray-900 font-sans font-semibold px-5 py-2 rounded-full hover:bg-yellow-500 text-sm transition-all duration-200"
               onClick={() => navigate("/login")}
             >
               Book Now
@@ -189,10 +213,16 @@ const Navbar = () => {
     border border-green-100 opacity-0 invisible group-hover:opacity-100 
     group-hover:visible transition-all duration-200 z-50"
               >
-                <div className="px-4 py-2 text-sm text-green-900 hover:bg-green-50 cursor-pointer">
+                <div
+                  onClick={() => navigate(routes.account.profile)}
+                  className="px-4 py-2 text-sm text-green-900 hover:bg-green-50 cursor-pointer"
+                >
                   Profile
                 </div>
-                <div className="px-4 py-2 text-sm text-green-900 hover:bg-green-50 cursor-pointer">
+                <div
+                  onClick={() => navigate(routes.account.settings)}
+                  className="px-4 py-2 text-sm text-green-900 hover:bg-green-50 cursor-pointer"
+                >
                   Settings
                 </div>
                 <div className="border-t border-green-100 my-1"></div>
@@ -209,6 +239,8 @@ const Navbar = () => {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
           className="lg:hidden text-white"
         >
           {menuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -250,7 +282,7 @@ const Navbar = () => {
                     navigate("/login");
                     setMenuOpen(false);
                   }}
-                  className="bg-yellow-600 text-green-900 font-semibold py-2 rounded-full"
+                  className="bg-yellow-600 text-gray-900 font-semibold py-2 rounded-full"
                 >
                   Book Now
                 </button>
@@ -347,13 +379,18 @@ const Navbar = () => {
                 <Link
                   to={routes.vendor.bookings}
                   onClick={() => setMenuOpen(false)}
-                  className={`font-sans text-sm font-medium ${
+                  className={`font-sans text-sm font-medium flex items-center gap-2 ${
                     isActive(routes.vendor.bookings)
                       ? "text-yellow-500"
                       : "text-white"
                   }`}
                 >
                   Bookings
+                  {newBookingCount > 0 && (
+                    <span className="bg-yellow-500 text-green-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {newBookingCount > 9 ? "9+" : newBookingCount} new
+                    </span>
+                  )}
                 </Link>
               </>
             )}
@@ -373,15 +410,39 @@ const Navbar = () => {
             )}
 
             {isLoggedIn && (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setMenuOpen(false);
-                }}
-                className="bg-red-500 text-white py-2 rounded-full font-medium"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  to={routes.account.profile}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.account.profile)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  Profile
+                </Link>
+                <Link
+                  to={routes.account.settings}
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-sans text-sm font-medium ${
+                    isActive(routes.account.settings)
+                      ? "text-yellow-500"
+                      : "text-white"
+                  }`}
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMenuOpen(false);
+                  }}
+                  className="bg-red-500 text-white py-2 rounded-full font-medium"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
         )}

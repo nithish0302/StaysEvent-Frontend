@@ -1,0 +1,288 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  MapPin,
+  IndianRupee,
+  Pencil,
+  Power,
+  Trash2,
+  Loader2,
+  CalendarDays,
+  Ticket,
+  Building2,
+  Eye,
+  X,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
+
+// ── Full event detail modal ──────────────────────────────────────────────────
+const EventDetailModal = ({ event, onClose }) => {
+  const loc = event.location || {};
+  const isHall = event.bookingType === "hall";
+
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : "—";
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-green-50">
+          <h2 className="font-semibold text-green-900 text-lg">{event.name}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-green-50 rounded-xl text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {event.photos?.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {event.photos.map((p, i) => (
+                <img key={i} src={p} alt={`${event.name} ${i + 1}`} className="w-full h-24 object-cover rounded-lg" />
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${event.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-600 border-gray-300"}`}>
+              {event.isActive ? "Active" : "Inactive"}
+            </span>
+            <span className="text-xs px-2.5 py-1 rounded-full border bg-blue-50 text-blue-700 border-blue-200 capitalize">
+              {event.status}
+            </span>
+            <span className="text-xs px-2.5 py-1 rounded-full border bg-purple-50 text-purple-700 border-purple-200">
+              {event.category === "Other" ? event.otherCategoryName : event.category}
+            </span>
+            {event.avgRating > 0 && (
+              <span className="text-xs px-2.5 py-1 rounded-full border bg-yellow-50 text-yellow-700 border-yellow-200">
+                {event.avgRating.toFixed(1)} avg · {event.reviewCount || 0} review{event.reviewCount !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Description</p>
+            <p className="text-sm text-gray-600">{event.description}</p>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Location</p>
+            <p className="text-sm text-green-900 flex items-start gap-1.5">
+              <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
+              {loc.address}, {loc.city}, {loc.state}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-green-50 rounded-xl p-3">
+              <p className="text-[11px] text-gray-500 flex items-center gap-1"><CalendarDays size={11} /> Start</p>
+              <p className="text-sm font-bold text-green-900">{fmtDate(event.startDate)}</p>
+              <p className="text-xs text-gray-500">{event.startTime}</p>
+            </div>
+            <div className="bg-green-50 rounded-xl p-3">
+              <p className="text-[11px] text-gray-500 flex items-center gap-1"><Clock size={11} /> End</p>
+              <p className="text-sm font-bold text-green-900">{fmtDate(event.endDate)}</p>
+              <p className="text-xs text-gray-500">{event.endTime}</p>
+            </div>
+          </div>
+
+          {isHall ? (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><IndianRupee size={11} /> Per Day</p>
+                <p className="text-lg font-bold text-green-900">₹{event.hallDetails?.pricePerDay?.toLocaleString()}</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><Building2 size={11} /> Total Halls</p>
+                <p className="text-lg font-bold text-green-900">{event.hallDetails?.totalHalls}</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><Building2 size={11} /> Available</p>
+                <p className="text-lg font-bold text-green-900">{event.hallDetails?.availableHalls}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><IndianRupee size={11} /> Ticket Price</p>
+                <p className="text-lg font-bold text-green-900">₹{event.ticketDetails?.price?.toLocaleString()}</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><Ticket size={11} /> Total Seats</p>
+                <p className="text-lg font-bold text-green-900">{event.ticketDetails?.totalSeats}</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-[11px] text-gray-500 flex items-center gap-1"><Ticket size={11} /> Available</p>
+                <p className="text-lg font-bold text-green-900">{event.ticketDetails?.availableSeats}</p>
+              </div>
+            </div>
+          )}
+
+          {event.amenities?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Amenities</p>
+              <div className="flex flex-wrap gap-2">
+                {event.amenities.map((a) => (
+                  <span key={a} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-green-200 text-green-800 bg-green-50">
+                    <CheckCircle2 size={11} /> {a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VendorEventCard = ({
+  event,
+  onToggleStatus,
+  onDeleteClick,
+  isToggling,
+}) => {
+  const navigate = useNavigate();
+  const [showDetails, setShowDetails] = useState(false);
+
+  const isHall = event.bookingType === "hall";
+  const price = isHall
+    ? event.hallDetails?.pricePerDay
+    : event.ticketDetails?.price;
+
+  const startDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+
+  const statusColors = {
+    upcoming: "bg-blue-50 text-blue-800",
+    ongoing: "bg-emerald-50 text-emerald-800",
+    completed: "bg-gray-100 text-gray-600",
+    cancelled: "bg-red-50 text-red-700",
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-green-100 overflow-hidden">
+      {/* IMAGE — click to view full details */}
+      <button
+        type="button"
+        onClick={() => setShowDetails(true)}
+        className="relative h-32 sm:h-36 w-full block text-left"
+      >
+        <img
+          src={event.photos?.[0]}
+          alt={event.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+
+        {/* Active badge */}
+        <span
+          className={`absolute top-2.5 right-2.5 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full
+            ${
+              event.isActive
+                ? "bg-emerald-50 text-emerald-800"
+                : "bg-gray-100 text-gray-600"
+            }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${event.isActive ? "bg-emerald-600" : "bg-gray-400"}`}
+          />
+          {event.isActive ? "Active" : "Inactive"}
+        </span>
+
+        {/* Event status badge */}
+        <span
+          className={`absolute top-2.5 left-2.5 text-[11px] font-medium px-2.5 py-1 rounded-full capitalize
+            ${statusColors[event.status] || "bg-gray-100 text-gray-600"}`}
+        >
+          {event.status}
+        </span>
+      </button>
+
+      {/* CONTENT */}
+      <div className="p-3">
+        <p className="font-semibold text-green-900 text-[15px] mb-1 truncate">
+          {event.name}
+        </p>
+
+        <div className="flex items-center gap-1 text-xs text-green-600 mb-1">
+          <MapPin size={13} />
+          <span className="truncate">
+            {event.location?.city}, {event.location?.state}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 text-xs text-gray-400 mb-2">
+          <CalendarDays size={12} />
+          <span>{startDate}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <p className="flex items-center gap-0.5 text-base font-semibold text-gold-600">
+            <IndianRupee size={14} />
+            {price?.toLocaleString() ?? "—"}
+            <span className="text-xs text-green-500 font-normal ml-1">
+              {isHall ? "/ day" : "/ ticket"}
+            </span>
+          </p>
+          <span className="ml-auto flex items-center gap-1 text-[11px] text-gray-500">
+            {isHall ? <Building2 size={12} /> : <Ticket size={12} />}
+            {isHall ? "Hall" : "Ticket"}
+          </span>
+        </div>
+      </div>
+
+      {/* ACTION ROW */}
+      <div className="flex border-t border-green-100">
+        <button
+          onClick={() => setShowDetails(true)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-green-900 border-r border-green-100 hover:bg-green-50 transition-colors"
+        >
+          <Eye size={14} />
+          View
+        </button>
+
+        <button
+          onClick={() => navigate(`/vendor/edit-event/${event._id}`)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-green-900 border-r border-green-100 hover:bg-green-50 transition-colors"
+        >
+          <Pencil size={14} />
+          Edit
+        </button>
+
+        <button
+          onClick={() => onToggleStatus(event._id)}
+          disabled={isToggling}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs border-r border-green-100 hover:bg-green-50 transition-colors disabled:opacity-50
+            ${event.isActive ? "text-green-900" : "text-emerald-700"}`}
+        >
+          {isToggling ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Power size={14} />
+          )}
+          {event.isActive ? "Disable" : "Enable"}
+        </button>
+
+        <button
+          onClick={() => onDeleteClick(event._id)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-red-700 hover:bg-red-50 transition-colors"
+        >
+          <Trash2 size={14} />
+          Delete
+        </button>
+      </div>
+
+      {showDetails && <EventDetailModal event={event} onClose={() => setShowDetails(false)} />}
+    </div>
+  );
+};
+
+export default VendorEventCard;

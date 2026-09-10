@@ -54,7 +54,7 @@ const RoleSelectionPage = () => {
           className="absolute left-5 top-5 h-12 lg:h-24"
         />
         <h1 className="font-display font-bold text-green-50 text-xl sm:text-3xl lg:text-5xl pl-16 lg:pl-0">
-          Welcome to Stay<span className="text-yellow-500">Event</span>
+          Welcome to Stay<span className="text-yellow-500">Events</span>
         </h1>
       </div>
       {/* middle layer */}

@@ -26,6 +26,7 @@ import MyEventsPage from "@/pages/vendor/MyEventsPage";
 import EditHotelPage from "@/pages/vendor/EditHotelPage";
 import EditEventPage from "@/pages/vendor/EditEventPage";
 import VendorBookingsPage from "@/pages/vendor/VendorBookingsPage";
+import ProfilePage from "@/pages/account/ProfilePage";
 
 const AppRouter = () => {
   const location = useLocation();
@@ -158,6 +159,22 @@ const AppRouter = () => {
           element={
             <ProtectedRoutes allowedRoles={["admin"]}>
               <AdminDashboardPage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.account.profile}
+          element={
+            <ProtectedRoutes>
+              <ProfilePage />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path={routes.account.settings}
+          element={
+            <ProtectedRoutes>
+              <ProfilePage />
             </ProtectedRoutes>
           }
         />

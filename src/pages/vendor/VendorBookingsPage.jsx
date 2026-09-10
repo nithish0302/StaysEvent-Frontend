@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getVendorBookings, updateBookingStatus } from "@/api/booking";
+import {
+  getVendorBookings,
+  updateBookingStatus,
+  markVendorBookingsSeen,
+} from "@/api/booking";
 import {
   Hotel,
   CalendarDays,
@@ -76,6 +80,12 @@ const BookingRow = ({ booking, onStatusUpdate }) => {
           <span className={`absolute top-2 left-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${isHotel ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
             {isHotel ? "Hotel" : "Event"}
           </span>
+          {!booking.vendorSeen && (
+            <span className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-500 text-green-950">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-950 animate-pulse" />
+              New
+            </span>
+          )}
         </div>
 
         {/* Main content */}
@@ -188,6 +198,13 @@ const VendorBookingsPage = () => {
   }, [statusFilter, categoryFilter, page]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
+
+  // Once the vendor has actually opened this page, clear the "New" badges
+  // (and the Navbar unread count) — but only after the first render, so the
+  // badges are still visible on that first paint.
+  useEffect(() => {
+    markVendorBookingsSeen().catch(() => {});
+  }, []);
 
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
