@@ -4,8 +4,23 @@ import { test, expect } from "@playwright/test";
 // baseline screenshots under e2e/visual.spec.js-snapshots/ — commit those,
 // then future runs diff against them and fail on unexpected layout changes.
 // Update intentional changes with: npx playwright test --update-snapshots
-
+//
+// CI-skipped: Playwright's screenshot baselines are per-OS (the files are
+// literally suffixed -win32/-linux/etc.), so baselines captured locally on
+// Windows never match GitHub Actions' Linux runners, and there's no way to
+// generate correct Linux baselines from a Windows machine. Re-generating
+// them from CI itself just means every legitimate UI change requires a
+// manual baseline-approval loop through Actions logs — high maintenance for
+// a portfolio project. Kept as a local-only sanity check instead; run
+// `npx playwright test e2e/visual.spec.js` on your own machine when you want
+// a layout regression check, and `--update-snapshots` after an intentional
+// design change.
 test.describe("Visual regression", () => {
+  test.skip(
+    !!process.env.CI,
+    "Screenshot baselines are OS-specific and only maintained locally — see comment above.",
+  );
+
   test("home page layout", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     // Not networkidle: the app keeps a socket.io connection open, so

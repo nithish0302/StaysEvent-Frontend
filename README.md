@@ -5,10 +5,11 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Tested_with-Playwright-2EAD33?logo=playwright&logoColor=white)
 ![CI](https://img.shields.io/github/actions/workflow/status/nithish0302/StaysEvent-Frontend/frontend-ci.yml?branch=main&label=CI)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-stayevents.vercel.app-000000?logo=vercel&logoColor=white)](https://stayevents.vercel.app/)
 
 React 19 + Vite + Tailwind CSS frontend for **StayEvents**, a full-stack hotel & event booking platform with separate customer, vendor, and admin experiences.
 
-**Live site:** [stayevents.vercel.app](https://stayevents.vercel.app/)
+**Live demo:** [stayevents.vercel.app](https://stayevents.vercel.app/)
 **Backend repo:** [StaysEvent-Backend](https://github.com/nithish0302/StaysEvent-Backend) — live at [staysevent-backend.onrender.com](https://staysevent-backend.onrender.com/)
 
 ## Table of contents
