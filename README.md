@@ -10,8 +10,7 @@
 React 19 + Vite + Tailwind CSS frontend for **StayEvents**, a full-stack hotel & event booking platform with separate customer, vendor, and admin experiences.
 
 **Live demo:** [stayevents.vercel.app](https://stayevents.vercel.app/)
-**Backend repo:** [StaysEvent-Backend](https://github.com/nithish0302/StaysEvent-Backend) — live at [staysevent-backend.onrender.com](https://staysevent-backend.onrender.com/)
-
+**Backend repo:** [StaysEvent-Backend](https://github.com/nithish0302/StaysEvent-Backend) 
 ## Table of contents
 
 - [Features](#features)
